@@ -16,6 +16,8 @@ public:
 		
 	};
 	
+	char m_var4;
+	
 	int GetParam() const ;
 	
 	virtual int VirtualMethod();

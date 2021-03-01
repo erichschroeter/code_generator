@@ -706,6 +706,7 @@ class CppClass(CppLanguageElement):
 
         # class members
         self.internal_variable_elements = []
+        self.internal_public_variable_elements = []
 
         # array class members
         self.internal_array_elements = []
@@ -732,6 +733,14 @@ class CppClass(CppLanguageElement):
         cpp_variable.ref_to_parent = self
         cpp_variable.is_class_member = True
         self.internal_variable_elements.append(cpp_variable)
+
+    def add_public_variable(self, cpp_variable):
+        '''
+        @param: cpp_variable CppVariable instance
+        '''
+        cpp_variable.ref_to_parent = self
+        cpp_variable.is_class_member = True
+        self.internal_public_variable_elements.append(cpp_variable)
 
     def add_array(self, cpp_variable):
         '''
@@ -781,6 +790,14 @@ class CppClass(CppLanguageElement):
         Render to string all contained variable class members
         '''
         for varItem in self.internal_variable_elements:
+            varItem.declaration().render_to_string(cpp)
+            cpp.newline()
+
+    def render_external_variables_declaration(self, cpp):
+        '''
+        Render to string all contained variable class members
+        '''
+        for varItem in self.internal_public_variable_elements:
             varItem.declaration().render_to_string(cpp)
             cpp.newline()
 
@@ -844,6 +861,7 @@ class CppClass(CppLanguageElement):
         '''
         self.render_enum_section(cpp)
         self.render_internal_classes_declaration(cpp)
+        self.render_external_variables_declaration(cpp)
         self.render_methods_declaration(cpp)
 
     def private_class_members(self, cpp):

@@ -149,6 +149,9 @@ class TestCppGenerator(unittest.TestCase):
         my_class.add_variable(CppVariable(name="m_var2",
                                           type="int*"))
 
+        my_class.add_public_variable(CppVariable(name="m_var4",
+                                                 type="char"))
+
         a2 = CppArray(name='array2', type='char*', is_const=True, is_static=True, )
         a2.add_array_item('"Item1"')
         a2.add_array_item('"Item2"')
