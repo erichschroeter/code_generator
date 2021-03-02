@@ -11,6 +11,12 @@ static const char* MyClass::array3[] =
 const size_t MyClass::Nested::m_gcAnswer  = 42;
 
 
+ MyClass::MyClass() :
+m_var1(1)
+,m_var3(nullptr)
+{
+}
+
 int MyClass::GetParam() const 
 {
 	return m_var1;

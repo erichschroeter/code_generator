@@ -16,6 +16,8 @@ public:
 		
 	};
 	
+	 MyClass();
+	
 	int GetParam() const ;
 	
 	virtual int VirtualMethod();
@@ -27,6 +29,8 @@ private:
 	int m_var1;
 	
 	int* m_var2;
+	
+	int* m_var3;
 	
 	static const char* array2[];
 	

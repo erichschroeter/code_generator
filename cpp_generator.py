@@ -192,6 +192,8 @@ class CppFunction(CppLanguageElement):
                                 'is_virtual',
                                 'is_pure_virtual',
                                 'implementation_handle',
+                                'is_constructor',
+                                'constructor_init_handle',
                                 'is_method'} | CppLanguageElement.availablePropertiesNames
 
     def __init__(self, **properties):
@@ -217,14 +219,23 @@ class CppFunction(CppLanguageElement):
             raise RuntimeError('Static method could not be virtual')
         if self.is_method and self.is_pure_virtual and not self.is_virtual:
             raise RuntimeError('Pure virtual method should have attribute is_virtual=True')
-        if self.is_method and not self.ref_to_parent:
-            raise RuntimeError('Method object could be a child of a CppClass only. Use CppClass.add_method()')
+        if (self.is_method or self.is_constructor) and not self.ref_to_parent:
+            raise RuntimeError('Method/Constructor object could be a child of a CppClass only. Use CppClass.add_method()')
+        if self.is_constructor and self.ret_type:
+            raise RuntimeError('Constructor objects have no return type.')
 
     def add_argument(self, argument):
         '''
         @param: argument string representation of the C++ function argument ('int a', 'void p = NULL' etc)
         '''
         self.arguments.append(argument)
+
+    def constructor_initialization(self, cpp):
+        '''
+        The method calls Python function that creates the C++ constructor initialization if handle exists
+        '''
+        if self.constructor_init_handle is not None:
+            self.constructor_init_handle(self, cpp)
 
     def implementation(self, cpp):
         '''
@@ -298,14 +309,17 @@ class CppFunction(CppLanguageElement):
         '''
         # check all properties for the consistency
         self.__sanity_check()
-        with cpp.block('{0}{1} {2}{3}({4}){5}{6}'.format(
+        cpp('{0}{1} {2}{3}({4}){5}'.format(
                 '/*virtual*/' if self.is_virtual else '',
                 self.ret_type if self.ret_type else '',
-                '{0}'.format(self.parent_qualifier()) if self.is_method else '',
+                '{0}'.format(self.parent_qualifier()) if self.is_method or self.is_constructor else '',
                 self.name,
                 ', '.join(self.arguments),
-                ' const ' if self.is_const else '',
-                ' = 0' if self.is_pure_virtual else '')):
+                ' :' if self.is_constructor else '{0}{1}'.format(
+                    ' const ' if self.is_const else '',
+                    ' = 0' if self.is_pure_virtual else '')))
+        self.constructor_initialization(cpp)
+        with cpp.block(None):
             self.implementation(cpp)
 
 
@@ -711,6 +725,7 @@ class CppClass(CppLanguageElement):
         self.internal_array_elements = []
 
         # class methods
+        self.internal_constructor_elements = []
         self.internal_method_elements = []
 
         # class enums
@@ -748,6 +763,17 @@ class CppClass(CppLanguageElement):
         '''
         cpp_class.ref_to_parent = self
         self.internal_class_elements.append(cpp_class)
+
+    def add_constructor(self, method):
+        '''
+        @param: method CppFunction instance
+        '''
+        method.ref_to_parent = self
+        method.is_constructor = True
+        # Allow for overriding constructor initialization by defining before calling this func
+        if method.constructor_init_handle is None:
+            method.constructor_init_handle = self.render_constructor_initialization
+        self.internal_constructor_elements.append(method)
 
     def add_method(self, method):
         '''
@@ -792,6 +818,15 @@ class CppClass(CppLanguageElement):
             arrItem.declaration().render_to_string(cpp)
             cpp.newline()
 
+    def render_constructors_declaration(self, cpp):
+        '''
+        Generates all class constructors declaration
+        Should be placed in 'public:' section
+        '''
+        for funcItem in self.internal_constructor_elements:
+            funcItem.render_to_string_declaration(cpp)
+            cpp.newline()
+
     def render_methods_declaration(self, cpp):
         '''
         Generates all class methods declaration
@@ -820,6 +855,25 @@ class CppClass(CppLanguageElement):
             classItem.render_static_members_implementation(cpp)
             cpp.newline()
 
+    def render_constructor_initialization(self, _, cpp):
+        is_first = True
+        for varItem in self.internal_variable_elements:
+            if varItem.initialization_value:
+                if not is_first:
+                    cpp.append(',')
+                varItem.render_to_string_implementation(cpp)
+                is_first = False
+
+    def render_constructors_implementation(self, cpp):
+        '''
+        Generates all class constructors declaration
+        Should be placed in 'public:' section
+        '''
+        # generate constructor implementation section
+        for funcItem in self.internal_constructor_elements:
+            funcItem.render_to_string_implementation(cpp)
+            cpp.newline()
+
     def render_methods_implementation(self, cpp):
         '''
         Generates all class methods declaration
@@ -844,6 +898,7 @@ class CppClass(CppLanguageElement):
         '''
         self.render_enum_section(cpp)
         self.render_internal_classes_declaration(cpp)
+        self.render_constructors_declaration(cpp)
         self.render_methods_declaration(cpp)
 
     def private_class_members(self, cpp):
@@ -892,6 +947,7 @@ class CppClass(CppLanguageElement):
         '''
         cpp.newline(2)
         self.render_static_members_implementation(cpp)
+        self.render_constructors_implementation(cpp)
         self.render_methods_implementation(cpp)
 
     def declaration(self):

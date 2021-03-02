@@ -149,6 +149,10 @@ class TestCppGenerator(unittest.TestCase):
         my_class.add_variable(CppVariable(name="m_var2",
                                           type="int*"))
 
+        my_class.add_variable(CppVariable(name="m_var3",
+                                          type="int*",
+                                          initialization_value="nullptr"))
+
         a2 = CppArray(name='array2', type='char*', is_const=True, is_static=True, )
         a2.add_array_item('"Item1"')
         a2.add_array_item('"Item2"')
@@ -161,6 +165,8 @@ class TestCppGenerator(unittest.TestCase):
 
         def method_body(_, cpp):
             cpp('return m_var1;')
+
+        my_class.add_constructor(CppFunction(name=my_class.name))
 
         my_class.add_method(CppFunction(name="GetParam",
                                         ret_type="int",
