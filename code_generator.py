@@ -68,7 +68,8 @@ class ANSICodeStyle:
         if self.owner.last is not None:
             with self.owner.last:
                 pass
-        self.owner.write("".join(text))
+        if text is not None:
+            self.owner.write("".join(text))
         self.owner.last = self
         self.postfix = postfix
         
