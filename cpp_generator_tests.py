@@ -20,6 +20,9 @@ class TestCppFunctionGenerator(unittest.TestCase):
     def handle_to_factorial(self, cpp):
         cpp('return n < 1 ? 1 : (n * factorial(n - 1));')
 
+    def handle_to_is_set(self, cpp):
+        cpp('return ( (*status) & ( 1 << bit ));')
+
     def test_is_constexpr_raises_error_when_implementation_value_is_none(self):
         writer = io.StringIO()
         cpp = CppFile(None, writer=writer)
@@ -36,6 +39,33 @@ class TestCppFunctionGenerator(unittest.TestCase):
             constexpr int factorial(int n)
             {
             \treturn n < 1 ? 1 : (n * factorial(n - 1));
+            }'''), writer.getvalue())
+
+    def test_is_inline_render_to_string(self):
+        writer = io.StringIO()
+        cpp = CppFile(None, writer=writer)
+        func = CppFunction(name="is_set", ret_type="bool", implementation_handle=TestCppFunctionGenerator.handle_to_is_set, is_inline=True)
+        func.add_argument('uint64_t * status')
+        func.add_argument('uint8_t bit')
+        func.render_to_string(cpp)
+        self.assertIn(dedent('''\
+            inline bool is_set(uint64_t * status, uint8_t bit)
+            {
+            \treturn ( (*status) & ( 1 << bit ));
+            }'''), writer.getvalue())
+
+    def test_is_inline_render_to_string_implementation(self):
+        writer = io.StringIO()
+        cpp = CppFile(None, writer=writer)
+        cpp_class = CppClass(name='Helper')
+        func = CppFunction(name="is_set", ret_type="bool", implementation_handle=TestCppFunctionGenerator.handle_to_is_set, is_inline=True, is_method=True, ref_to_parent=cpp_class)
+        func.add_argument('uint64_t * status')
+        func.add_argument('uint8_t bit')
+        func.render_to_string_implementation(cpp)
+        self.assertIn(dedent('''\
+            inline bool Helper::is_set(uint64_t * status, uint8_t bit)
+            {
+            \treturn ( (*status) & ( 1 << bit ));
             }'''), writer.getvalue())
 
     def test_is_constexpr_render_to_string_declaration(self):

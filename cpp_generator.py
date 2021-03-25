@@ -194,6 +194,7 @@ class CppFunction(CppLanguageElement):
     '''
     availablePropertiesNames = {'ret_type',
                                 'is_static',
+                                'is_inline',
                                 'is_const',
                                 'is_constexpr',
                                 'is_virtual',
@@ -273,7 +274,8 @@ class CppFunction(CppLanguageElement):
         self.__sanity_check()
         if self.documentation and self.is_constexpr:
             cpp(dedent(self.documentation))
-        with cpp.block('{0}{1}{2} {3}({4}){5}{6}'.format(
+        with cpp.block('{0}{1}{2}{3} {4}({5}){6}{7}'.format(
+            'inline ' if self.is_inline else '',
             'virtual ' if self.is_virtual else '',
             'constexpr ' if self.is_constexpr else '',
             self.ret_type if self.ret_type else '',
@@ -326,7 +328,8 @@ class CppFunction(CppLanguageElement):
         self.__sanity_check()
         if self.documentation and not self.is_constexpr:
             cpp(dedent(self.documentation))
-        with cpp.block('{0}{1} {2}{3}({4}){5}{6}'.format(
+        with cpp.block('{0}{1}{2} {3}{4}({5}){6}{7}'.format(
+                'inline ' if self.is_inline else '',
                 '/*virtual*/' if self.is_virtual else '',
                 self.ret_type if self.ret_type else '',
                 '{0}'.format(self.parent_qualifier()) if self.is_method else '',
