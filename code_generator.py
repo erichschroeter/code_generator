@@ -54,10 +54,10 @@ class ANSICodeStyle:
 
     # EOL symbol
     endline = "\n"
- 
+
     # Tab (indentation) symbol
     indent = "\t"
- 
+
     def __init__(self, owner, text, postfix):
         """
         @param: owner - CodeFile where text is written to
@@ -71,7 +71,7 @@ class ANSICodeStyle:
         self.owner.write("".join(text))
         self.owner.last = self
         self.postfix = postfix
-        
+
     def __enter__(self):
         """
         Open code block
@@ -89,12 +89,12 @@ class ANSICodeStyle:
                 pass
         self.owner.current_indent -= 1
         self.owner.write("}" + self.postfix)
- 
+
 
 class CodeFile:
     """
     The class is a main instrument of code generation
-    
+
     It can generate plain strings using functional calls
     Ex:
     code = CodeFile(python_src_file)
@@ -105,27 +105,27 @@ class CodeFile:
     # Python code
     with code('for i in range(0, 5):'):
         code('lst.append(i*i)')
- 
+
     # Generated code:
     for i in range(0, 5):
         lst.append(i*i)
- 
+
     It can append code to the last line:
     Ex.
     # Python code
     cpp = CodeFile('ex.cpp')
     cpp('class Derived')
     cpp.append(' : public Base')
- 
+
     // Generated code
     class Derived : public Base
- 
+
     And finally, it can insert a number of empty lines
     cpp.newline(3)
     """
     # Current formatting style (assigned as a class attribute to generate all files uniformly)
     Formatter = ANSICodeStyle
- 
+
     def __init__(self, filename, writer=None):
         """
         Creates a new source file
@@ -139,14 +139,14 @@ class CodeFile:
             self.out = writer
         else:
             self.out = open(filename, "w")
- 
+
     def close(self):
         """
         File created, just close the handle
         """
         self.out.close()
         self.out = None
- 
+
     def write(self, text, indent=0):
         """
         Write a new line with line ending
@@ -154,7 +154,7 @@ class CodeFile:
         self.out.write('{0}{1}{2}'.format(CodeFile.Formatter.indent * (self.current_indent+indent),
                                           text,
                                           CodeFile.Formatter.endline))
- 
+
     def append(self, x):
         """
         Append to the existing line without line ending
@@ -168,7 +168,7 @@ class CodeFile:
         inserts appropriate line
         """
         self.write(text)
-        
+
     def block(self, text, postfix=''):
         """
         Returns a stub for C++ {} close
@@ -176,14 +176,14 @@ class CodeFile:
         cpp.block(class_name, ';'):
         """
         return CodeFile.Formatter(self, text, postfix)
- 
+
     def newline(self, n=1):
         """
         Insert one or several empty lines
         """
         for _ in range(n):
             self.write('')
- 
+
 
 class CppFile(CodeFile):
     """
@@ -194,7 +194,7 @@ class CppFile(CodeFile):
         Create C++ source file
         """
         CodeFile.__init__(self, filename, writer)
-        
+
     def label(self, text):
         """
         Could be used for access specifiers or ANSI C labels, e.g.

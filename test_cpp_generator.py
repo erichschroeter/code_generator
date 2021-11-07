@@ -74,7 +74,8 @@ def generate_array(output_dir='.'):
     a2 = CppArray(name='array2', type='const char*', is_const=True)
     a2.add_array_item('"Item1"')
     a2.add_array_item('"Item2"')
-    a3 = CppArray(name='array3', type='const char*', is_const=True, newline_align=True)
+    a3 = CppArray(name='array3', type='const char*',
+                  is_const=True, newline_align=True)
     a3.add_array_item('"ItemNewline1"')
     a3.add_array_item('"ItemNewline2"')
 
@@ -160,7 +161,8 @@ def generate_class(output_dir='.'):
     a2 = CppArray(name='array2', type='char*', is_const=True, is_static=True, )
     a2.add_array_item('"Item1"')
     a2.add_array_item('"Item2"')
-    a3 = CppArray(name='array3', type='char*', is_static=True, is_const=True, newline_align=True)
+    a3 = CppArray(name='array3', type='char*', is_static=True,
+                  is_const=True, newline_align=True)
     a3.add_array_item('"ItemNewline1"')
     a3.add_array_item('"ItemNewline2"')
 

@@ -233,11 +233,14 @@ class CppFunction(CppLanguageElement):
         if self.is_method and self.is_static and self.is_virtual:
             raise RuntimeError('Static method could not be virtual')
         if self.is_method and self.is_pure_virtual and not self.is_virtual:
-            raise RuntimeError('Pure virtual method should have attribute is_virtual=True')
+            raise RuntimeError(
+                'Pure virtual method should have attribute is_virtual=True')
         if self.is_method and not self.ref_to_parent:
-            raise RuntimeError('Method object could be a child of a CppClass only. Use CppClass.add_method()')
+            raise RuntimeError(
+                'Method object could be a child of a CppClass only. Use CppClass.add_method()')
         if self.is_constexpr and not self.implementation_handle:
-            raise RuntimeError("Method object must be initialized when 'constexpr'")
+            raise RuntimeError(
+                "Method object must be initialized when 'constexpr'")
 
     def add_argument(self, argument):
         """
@@ -338,7 +341,8 @@ class CppFunction(CppLanguageElement):
         with cpp.block('{0}{1} {2}{3}({4}){5}{6}'.format(
                 '/*virtual*/' if self.is_virtual else '',
                 self.ret_type if self.ret_type else '',
-                '{0}'.format(self.parent_qualifier()) if self.is_method else '',
+                '{0}'.format(self.parent_qualifier()
+                             ) if self.is_method else '',
                 self.name,
                 ', '.join(self.arguments),
                 ' const ' if self.is_const else '',
@@ -410,9 +414,11 @@ class CppEnum(CppLanguageElement):
         counter = 0
         with cpp.block('enum {0}'.format(self.name), ';'):
             for item in self.enum_items:
-                cpp('{0}{1} = {2},'.format(self.prefix if self.prefix else 'e', item, counter))
+                cpp('{0}{1} = {2},'.format(
+                    self.prefix if self.prefix else 'e', item, counter))
                 counter += 1
-            last_element = '{0}{1}Count'.format(self.prefix if self.prefix else 'e', self.name)
+            last_element = '{0}{1}Count'.format(
+                self.prefix if self.prefix else 'e', self.name)
             cpp(last_element)
 
 
@@ -453,11 +459,14 @@ class CppVariable(CppLanguageElement):
         self.init_class_properties(current_class_properties=self.availablePropertiesNames,
                                    input_properties_dict=properties)
         if self.is_const and self.is_constexpr:
-            raise RuntimeError("Variable object can be either 'const' or 'constexpr', not both")
+            raise RuntimeError(
+                "Variable object can be either 'const' or 'constexpr', not both")
         if self.is_constexpr and not self.initialization_value:
-            raise RuntimeError("Variable object must be initialized when 'constexpr'")
+            raise RuntimeError(
+                "Variable object must be initialized when 'constexpr'")
         if self.is_static and self.is_extern:
-            raise RuntimeError("Variable object can be either 'extern' or 'static', not both")
+            raise RuntimeError(
+                "Variable object can be either 'extern' or 'static', not both")
 
     def declaration(self):
         """
@@ -481,7 +490,8 @@ class CppVariable(CppLanguageElement):
         const double b = M_PI;
         """
         if self.is_class_member and not (self.is_static and self.is_const):
-            raise RuntimeError('For class member variables use definition() and declaration() methods')
+            raise RuntimeError(
+                'For class member variables use definition() and declaration() methods')
         else:
             if self.documentation:
                 cpp(dedent(self.documentation))
@@ -498,7 +508,8 @@ class CppVariable(CppLanguageElement):
         int m_var;
         """
         if not self.is_class_member:
-            raise RuntimeError('For automatic variable use its render_to_string() method')
+            raise RuntimeError(
+                'For automatic variable use its render_to_string() method')
 
         if self.documentation and self.is_class_member:
             cpp(dedent(self.documentation))
@@ -522,13 +533,15 @@ class CppVariable(CppLanguageElement):
         That string could be used in constructor initialization string
         """
         if not self.is_class_member:
-            raise RuntimeError('For automatic variable use its render_to_string() method')
+            raise RuntimeError(
+                'For automatic variable use its render_to_string() method')
 
         # generate definition for the static class member
         if self.is_static:
             cpp('{0}{1} {2}{3} {4};'.format('const ' if self.is_const else '',
                                             self.type,
-                                            '{0}'.format(self.parent_qualifier()),
+                                            '{0}'.format(
+                                                self.parent_qualifier()),
                                             self.name,
                                             ' = {0}'.format(
                                                 self.initialization_value if self.initialization_value else '')))
@@ -630,7 +643,8 @@ class CppArray(CppLanguageElement):
         For class members use render_to_string_declaration/render_to_string_implementation methods
         """
         if self.is_class_member and not (self.is_static and self.is_const):
-            raise RuntimeError('For class member variables use definition() and declaration() methods')
+            raise RuntimeError(
+                'For class member variables use definition() and declaration() methods')
 
         # newline-formatting of array elements makes sense only if array is not empty
         if self.newline_align and self.items:
@@ -658,7 +672,8 @@ class CppArray(CppLanguageElement):
         static int my_class_member_array[];
         """
         if not self.is_class_member:
-            raise RuntimeError('For automatic variable use its render_to_string() method')
+            raise RuntimeError(
+                'For automatic variable use its render_to_string() method')
 
         cpp('{0}{1}{2} {3}{4};'.format('static ' if self.is_static else '',
                                        'const ' if self.is_const else '',
@@ -680,19 +695,22 @@ class CppArray(CppLanguageElement):
         Non-static arrays-class members do not supported
         """
         if not self.is_class_member:
-            raise RuntimeError('For automatic variable use its render_to_string() method')
+            raise RuntimeError(
+                'For automatic variable use its render_to_string() method')
 
         # generate definition for the static class member arrays only
         # other types does not supported
         if not self.is_static:
-            raise RuntimeError('Only static arrays as class members are supported')
+            raise RuntimeError(
+                'Only static arrays as class members are supported')
 
         # newline-formatting of array elements makes sense only if array is not empty
         if self.newline_align and self.items:
             with cpp.block('{0}{1}{2} {3}{4}{5} = '.format('static ' if self.is_static else '',
                                                            'const ' if self.is_const else '',
                                                            self.type,
-                                                           '{0}'.format(self.parent_qualifier()),
+                                                           '{0}'.format(
+                                                               self.parent_qualifier()),
                                                            self.name,
                                                            '[{0}]'.format(self.arraySize if self.arraySize else '')),
                            ';'):
@@ -702,7 +720,8 @@ class CppArray(CppLanguageElement):
             cpp('{0}{1}{2} {3}{4}{5} = {6};'.format('static ' if self.is_static else '',
                                                     'const ' if self.is_const else '',
                                                     self.type,
-                                                    '{0}'.format(self.parent_qualifier()),
+                                                    '{0}'.format(
+                                                        self.parent_qualifier()),
                                                     self.name,
                                                     '[{0}]'.format(self.arraySize if self.arraySize else ''),
                                                     '{{{0}}}'.format(', '.join(self.items)) if self.items else 'NULL'))
@@ -865,7 +884,8 @@ class CppClass(CppLanguageElement):
         int MyClass::my_static_array[] = {}
         """
         # generate definition for static variables
-        static_vars = [variable for variable in self.internal_variable_elements if variable.is_static]
+        static_vars = [
+            variable for variable in self.internal_variable_elements if variable.is_static]
         for varItem in static_vars:
             varItem.definition().render_to_string(cpp)
             cpp.newline()

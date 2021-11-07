@@ -4,8 +4,10 @@ import unittest
 from code_generator import CppFile
 from cpp_generator import CppFunction
 
+
 def handle_to_factorial(self, cpp):
     cpp('return n < 1 ? 1 : (n * factorial(n - 1));')
+
 
 class TestCppFunctionGenerator(unittest.TestCase):
 
@@ -21,7 +23,8 @@ class TestCppFunctionGenerator(unittest.TestCase):
     def test_is_constexpr_render_to_string(self):
         writer = io.StringIO()
         cpp = CppFile(None, writer=writer)
-        func = CppFunction(name="factorial", ret_type="int", implementation_handle=TestCppFunctionGenerator.handle_to_factorial, is_constexpr=True)
+        func = CppFunction(name="factorial", ret_type="int",
+                           implementation_handle=TestCppFunctionGenerator.handle_to_factorial, is_constexpr=True)
         func.add_argument('int n')
         func.render_to_string(cpp)
         self.assertIn(dedent('''\
@@ -33,7 +36,8 @@ class TestCppFunctionGenerator(unittest.TestCase):
     def test_is_constexpr_render_to_string_declaration(self):
         writer = io.StringIO()
         cpp = CppFile(None, writer=writer)
-        func = CppFunction(name="factorial", ret_type="int", implementation_handle=TestCppFunctionGenerator.handle_to_factorial, is_constexpr=True)
+        func = CppFunction(name="factorial", ret_type="int",
+                           implementation_handle=TestCppFunctionGenerator.handle_to_factorial, is_constexpr=True)
         func.add_argument('int n')
         func.render_to_string_declaration(cpp)
         self.assertIn(dedent('''\
@@ -45,7 +49,8 @@ class TestCppFunctionGenerator(unittest.TestCase):
     def test_README_example(self):
         writer = io.StringIO()
         cpp = CppFile(None, writer=writer)
-        factorial_function = CppFunction(name='factorial', ret_type='int', is_constexpr=True, implementation_handle=handle_to_factorial, documentation='/// Calculates and returns the factorial of \p n.')
+        factorial_function = CppFunction(name='factorial', ret_type='int', is_constexpr=True,
+                                         implementation_handle=handle_to_factorial, documentation='/// Calculates and returns the factorial of \p n.')
         factorial_function.add_argument('int n')
         factorial_function.render_to_string(cpp)
         self.assertIn(dedent('''\
