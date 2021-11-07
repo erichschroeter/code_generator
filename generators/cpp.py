@@ -132,7 +132,7 @@ class Function(CppLanguageElement):
     qualifier: Optional[Qualifier] = None
     postfix_qualifier: Optional[Qualifier] = None
     # is_pure: bool = False
-    implementation_handle: Optional[Callable] = None
+    implementation_handle: Optional[Callable[..., str]] = None
     args: Optional[List[str]] = None
     
 
@@ -268,26 +268,97 @@ class VariableConstructorDefinition(CppDefinition):
             return code
 
 
-def simple_function_decl_def(cpp_element: Function, indentation=None) -> str:
-    qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
-    # scope = cpp_element.ref_to_parent.name + '::' if cpp_element.ref_to_parent else ''
-    return_type = cpp_element.return_type if cpp_element.return_type else 'void'
-    lhs = f"{qualifier}{return_type} {cpp_element.name}"
-    args = ', '.join(cpp_element.args) if cpp_element.args else ''
-    postfix_qualifier = ' ' + cpp_element.postfix_qualifier() if cpp_element.postfix_qualifier else ''
-    code = f"{lhs}({args}){postfix_qualifier};"
-    if indentation:
-        return indentation.indent(code)
-    else:
-        return code
+class BraceStrategy(ABC):
+    
+    @abstractmethod
+    def code(self, implementation_handle: Callable[..., str], indentation=None) -> str:
+        pass
+
+
+class AllmanStyle(BraceStrategy):
+    """
+    Braces are put on their own line.
+    see https://en.wikipedia.org/wiki/Indentation_style#Allman_style
+
+    e.g. 
+    while (x == y)
+    {
+        something();
+        somethingelse();
+    }
+    """
+    
+    def code(self, implementation_handle: Callable[..., str], indentation=None) -> str:
+        code = implementation_handle() if implementation_handle else ''
+        indentation = indentation
+        if not indentation:
+            indentation = Indentation(level=1)
+        else:
+            indentation.level += 1
+        lines = [indentation.indent(line) for line in code.split('\n')]
+        code = '\n'.join(lines)
+        indentation.level -= 1
+        return f"\n{indentation.indent('{')}\n{code}\n{indentation.indent('}')}"
+
+
+class KnRStyle(BraceStrategy):
+    """
+    Braces are put on same line as function.
+    see https://en.wikipedia.org/wiki/Indentation_style#K&R_style
+
+    e.g. 
+    while (x == y) {
+        something();
+        somethingelse();
+    }
+    """
+    
+    def code(self, implementation_handle: Callable[..., str], indentation=None) -> str:
+        code = implementation_handle() if implementation_handle else None
+        indentation = indentation
+        if not indentation:
+            indentation = Indentation(level=1)
+        else:
+            indentation.level += 1
+        lines = [indentation.indent(line) for line in code.split('\n')] if code else []
+        code = '\n'.join(lines)
+        indentation.level -= 1 # reset indentation level to prior value upon entering this function
+        newline = '\n' # workaround for no backslash in f string
+        return f" {{\n{code}{newline if code else ''}{indentation.indent('}')}"
 
 
 class FunctionDeclaration(CppDeclaration):
+
+    def code(self, indentation=None) -> str:
+        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
+        # scope = self.cpp_element.ref_to_parent.name + '::' if self.cpp_element.ref_to_parent else ''
+        return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
+        lhs = f"{qualifier}{return_type} {self.cpp_element.name}"
+        args = ', '.join(self.cpp_element.args) if self.cpp_element.args else ''
+        postfix_qualifier = ' ' + self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
+        code = f"{lhs}({args}){postfix_qualifier};"
+        if indentation:
+            return indentation.indent(code)
+        else:
+            return code
+
+
+@dataclass
+class FunctionDefinition(CppDefinition):
     
-    def __init__(self, cpp_element: Function):
-        self.cpp_element = cpp_element
+    brace_strategy: BraceStrategy = KnRStyle()
 
 
     def code(self, indentation=None) -> str:
-        return simple_function_decl_def(self.cpp_element, indentation)
+        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
+        # scope = self.cpp_element.ref_to_parent.name + '::' if self.cpp_element.ref_to_parent else ''
+        return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
+        lhs = f"{qualifier}{return_type} {self.cpp_element.name}"
+        args = ', '.join(self.cpp_element.args) if self.cpp_element.args else ''
+        postfix_qualifier = ' ' + self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
+        code = f"{lhs}({args}){postfix_qualifier}{self.brace_strategy.code(self.cpp_element.implementation_handle, indentation)}"
+        if indentation:
+            return indentation.indent(code)
+        else:
+            return code
 

@@ -1,8 +1,9 @@
 import io
+from textwrap import dedent
 import unittest
 from code_generator import CppFile
 from cpp_generator import CppVariable
-from generators.cpp import VariableConstructorDefinition, Indentation, Static, Inline, VariableDefinition, Volatile, Const, Constexpr, Extern, Variable, VariableDeclaration, Virtual, is_const, is_constexpr
+from generators.cpp import AllmanStyle, Function, FunctionDeclaration, FunctionDefinition, KnRStyle, Pure, VariableConstructorDefinition, Indentation, Static, Inline, VariableDefinition, Volatile, Const, Constexpr, Extern, Variable, VariableDeclaration, Virtual, is_const, is_constexpr
 
 
 class TestCppQualifiers(unittest.TestCase):
@@ -27,6 +28,9 @@ class TestCppQualifiers(unittest.TestCase):
 
     def test_extern(self):
         self.assertEqual('extern', Extern()())
+
+    def test_pure(self):
+        self.assertEqual('= 0', Pure()())
 
     def test_static_const(self):
         self.assertEqual('static const', Static(Const())())
@@ -182,4 +186,75 @@ class TestConstructorDefinition(unittest.TestCase):
 
     def test_with_init_value_and_constexpr_qualifer(self):
         self.assertEqual('a(0)', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+
+
+class TestFunction(unittest.TestCase):
+
+    def test_raises_error_with_empty_name(self):
+        self.assertRaises(ValueError, Function)
+
+
+class TestFunctionDeclaration(unittest.TestCase):
+
+    def test_default_return_type_void(self):
+        self.assertEqual('void a();', FunctionDeclaration(Function(name='a')).code())
+
+    def test_pure_virtual(self):
+        self.assertEqual('virtual void a() = 0;', FunctionDeclaration(Function(name='a', qualifier=Virtual(), postfix_qualifier=Pure())).code())
+
+    def test_with_one_arg(self):
+        self.assertEqual('void a(int x);', FunctionDeclaration(Function(name='a').with_arg('int x')).code())
+
+    def test_with_two_args(self):
+        self.assertEqual('void a(int x, float y);', FunctionDeclaration(Function(name='a').with_arg('int x').with_arg('float y')).code())
+        
+        
+class TestAllmanStyle(unittest.TestCase):
+    
+    def test_open_brace_on_line_after_function(self):
+        def example_main() -> str:
+            return 'return 0;'
+        self.assertEqual(dedent("""\
+
+            {
+            \treturn 0;
+            }"""), AllmanStyle().code(implementation_handle=example_main))
+        
+        
+class TestKnRStyle(unittest.TestCase):
+    
+    def test_open_brace_on_same_line_as_function(self):
+        def example_main() -> str:
+            return 'return 0;'
+        self.assertEqual(dedent("""\
+             {
+            \treturn 0;
+            }"""), KnRStyle().code(implementation_handle=example_main))
+
+
+class TestFunctionDefinition(unittest.TestCase):
+
+    def test_default_return_type_void(self):
+        self.assertEqual('void a() {\n}', FunctionDefinition(Function(name='a'), brace_strategy=KnRStyle()).code())
+
+    def test_default_with_one_arg(self):
+        self.assertEqual('void a(int x) {\n}', FunctionDefinition(Function(name='a').with_arg('int x'), brace_strategy=KnRStyle()).code())
+
+    def test_default_with_two_arg(self):
+        self.assertEqual('void a(int x, float y) {\n}', FunctionDefinition(Function(name='a').with_arg('int x').with_arg('float y'), brace_strategy=KnRStyle()).code())
+
+    def test_default_with_implementation_handle(self):
+        def do_something() -> str:
+            return dedent("""\
+            for ( auto const var : var_list )
+            {
+            \tvar->update();
+            }""")
+        self.assertEqual(dedent("""\
+            void a() {
+            \tfor ( auto const var : var_list )
+            \t{
+            \t\tvar->update();
+            \t}
+            }"""), FunctionDefinition(Function(name='a', implementation_handle=do_something), brace_strategy=KnRStyle()).code())
 
