@@ -54,8 +54,13 @@ For detailed information see code_generator.py documentation.
 from textwrap import dedent
 
 
+# TODO create CppRenderer ABC
+
 ###########################################################################
 # declaration/Implementation helpers
+
+# TODO refactor CppDeclaration to accept Scoped/Unscoped strategy
+# TODO refactor CppDeclaration to inherit CppRenderer
 class CppDeclaration(object):
     """
     declaration/Implementation pair is used to split one element code generation to
@@ -80,6 +85,8 @@ class CppDeclaration(object):
         self.cpp_element.render_to_string_declaration(cpp)
 
 
+# TODO refactor CppImplementation to accept Scoped/Unscoped strategy
+# TODO refactor CppImplementation to inherit CppRenderer
 class CppImplementation(object):
     """
     See declaration description
@@ -92,6 +99,9 @@ class CppImplementation(object):
         self.cpp_element.render_to_string_implementation(cpp)
 
 
+# TODO refactor CppLanguageElement to a dataclass
+# TODO refactor CppLanguageElement to accept a CppDeclaration using strategy pattern
+# TODO refactor CppLanguageElement to accept a CppImplementation using strategy pattern
 # C++ language element generators
 class CppLanguageElement(object):
     """
