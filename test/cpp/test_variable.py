@@ -2,7 +2,7 @@ import io
 import unittest
 from code_generator import CppFile
 from cpp_generator import CppVariable
-from generators.cpp import Static, Inline, Volatile, Const, Constexpr, Extern, Virtual, is_const, is_constexpr
+from generators.cpp import VariableConstructorDefinition, Indentation, Static, Inline, VariableDefinition, Volatile, Const, Constexpr, Extern, Variable, VariableDeclaration, Virtual, is_const, is_constexpr
 
 
 class TestCppQualifiers(unittest.TestCase):
@@ -104,3 +104,82 @@ class TestCppVariableGenerator(unittest.TestCase):
         v = CppVariable(name="var1", type="char*", is_extern=True)
         v.render_to_string(cpp)
         self.assertIn('extern char* var1;', writer.getvalue())
+
+
+class TestIndentation(unittest.TestCase):
+
+    def test_with_level_1(self):
+        self.assertEqual('\ta', Indentation(level=1).indent('a'))
+
+    def test_with_level_1_and_single_whitespace(self):
+        self.assertEqual(' a', Indentation(level=1, whitespace=' ').indent('a'))
+
+    def test_with_level_1_and_four_whitespace(self):
+        self.assertEqual('    a', Indentation(level=1, whitespace='    ').indent('a'))
+
+    def test_with_level_2(self):
+        self.assertEqual('\t\ta', Indentation(level=2).indent('a'))
+
+    def test_with_level_2_and_single_whitespace(self):
+        self.assertEqual('  a', Indentation(level=2, whitespace=' ').indent('a'))
+
+    def test_with_level_2_and_four_whitespace(self):
+        self.assertEqual('        a', Indentation(level=2, whitespace='    ').indent('a'))
+
+
+class TestVariable(unittest.TestCase):
+
+    def test_raises_error_with_empty_name(self):
+        self.assertRaises(ValueError, Variable)
+
+    def test_raises_error_with_empty_type(self):
+        self.assertRaises(ValueError, Variable, name='a')
+
+
+class TestVariableDeclaration(unittest.TestCase):
+
+    def test_with_name_and_type_only(self):
+        self.assertEqual('int a;', VariableDeclaration(Variable(name='a', type='int')).code())
+
+    def test_with_qualifiers(self):
+        self.assertEqual('const int a;', VariableDeclaration(Variable(name='a', type='int', qualifier=Const())).code())
+
+    def test_with_init_value_and_const_qualifer(self):
+        self.assertEqual('const int a = 0;', VariableDeclaration(Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+
+    def test_with_init_value_and_constexpr_qualifer(self):
+        self.assertEqual('constexpr int a = 0;', VariableDeclaration(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+
+
+class TestVariableDefinition(unittest.TestCase):
+
+    def test_with_name_and_type_only(self):
+        self.assertEqual('int a;', VariableDefinition(Variable(name='a', type='int')).code())
+
+    def test_with_qualifiers(self):
+        self.assertEqual('const int a;', VariableDefinition(Variable(name='a', type='int', qualifier=Const())).code())
+
+    def test_with_init_value_and_const_qualifer(self):
+        self.assertEqual('const int a = 0;', VariableDefinition(Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+
+    def test_with_init_value_and_constexpr_qualifer(self):
+        self.assertEqual('constexpr int a = 0;', VariableDefinition(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+
+    # def test_with_ref_to_parent(self):
+    #     self.assertEqual('int MyClass::a;', VariableDefinition(Variable(name='a', type='int', init_value='0', ref_to_parent=)).code())
+
+
+class TestConstructorDefinition(unittest.TestCase):
+
+    def test_with_name_and_type_only(self):
+        self.assertEqual('a()', VariableConstructorDefinition(Variable(name='a', type='int')).code())
+
+    def test_with_qualifiers(self):
+        self.assertEqual('a()', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Const())).code())
+
+    def test_with_init_value_and_const_qualifer(self):
+        self.assertEqual('a(0)', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+
+    def test_with_init_value_and_constexpr_qualifer(self):
+        self.assertEqual('a(0)', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+
