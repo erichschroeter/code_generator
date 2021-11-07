@@ -280,3 +280,11 @@ class TestFunctionDefinition(unittest.TestCase):
             \t\tvar->update();
             \t}
             }"""), FunctionDefinition(Function(name='a', implementation_handle=do_something), brace_strategy=KnRStyle()).code())
+
+    def test_const_function(self):
+        def example_accessor() -> str:
+            return 'return m_count;'
+        self.assertEqual(dedent("""\
+            int get_count() const {
+            \treturn m_count;
+            }"""), FunctionDefinition(Function(name='get_count', return_type='int', postfix_qualifier=Const(), implementation_handle=example_accessor), brace_strategy=KnRStyle()).code())
