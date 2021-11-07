@@ -124,7 +124,8 @@ class CppLanguageElement(object):
         Ensure that all properties that passed to the CppLanguageElement are recognized.
         Raise an exception otherwise
         """
-        unknown_properties = input_property_names.difference(self.availablePropertiesNames)
+        unknown_properties = input_property_names.difference(
+            self.availablePropertiesNames)
         if unknown_properties:
             raise AttributeError(
                 f'Error: try to initialize {self.__class__.__name__} with unknown property: {repr(unknown_properties)}')
@@ -229,7 +230,8 @@ class CppFunction(CppLanguageElement):
         Check whether attributes compose a correct C++ code
         """
         if not self.is_method and (self.is_static or self.is_const or self.is_virtual or self.is_pure_virtual):
-            raise RuntimeError('Non-member function could not be static, const or (pure)virtual')
+            raise RuntimeError(
+                'Non-member function could not be static, const or (pure)virtual')
         if self.is_method and self.is_static and self.is_virtual:
             raise RuntimeError('Static method could not be virtual')
         if self.is_method and self.is_pure_virtual and not self.is_virtual:
@@ -373,7 +375,8 @@ class CppEnum(CppLanguageElement):
         eItemsCount = 3
     }
     """
-    availablePropertiesNames = {'prefix'} | CppLanguageElement.availablePropertiesNames
+    availablePropertiesNames = {
+        'prefix'} | CppLanguageElement.availablePropertiesNames
 
     def __init__(self, **properties):
         # check properties
@@ -549,7 +552,8 @@ class CppVariable(CppLanguageElement):
         # generate definition for non-static static class member
         # (string for the constructor initialization list)
         else:
-            cpp('{0}({1})'.format(self.name, self.initialization_value if self.initialization_value else ''))
+            cpp('{0}({1})'.format(
+                self.name, self.initialization_value if self.initialization_value else ''))
 
 
 # noinspection PyUnresolvedReferences
@@ -660,7 +664,8 @@ class CppArray(CppLanguageElement):
                                                  'const ' if self.is_const else '',
                                                  self.type,
                                                  self.name,
-                                                 '[{0}]'.format(self.arraySize if self.arraySize else ''),
+                                                 '[{0}]'.format(
+                                                     self.arraySize if self.arraySize else ''),
                                                  '{{{0}}}'.format(', '.join(self.items)) if self.items else 'NULL'))
 
     def render_to_string_declaration(self, cpp):
@@ -723,7 +728,8 @@ class CppArray(CppLanguageElement):
                                                     '{0}'.format(
                                                         self.parent_qualifier()),
                                                     self.name,
-                                                    '[{0}]'.format(self.arraySize if self.arraySize else ''),
+                                                    '[{0}]'.format(
+                                                        self.arraySize if self.arraySize else ''),
                                                     '{{{0}}}'.format(', '.join(self.items)) if self.items else 'NULL'))
 
 

@@ -99,7 +99,7 @@ class CodeFile:
     Ex:
     code = CodeFile(python_src_file)
     code('import os, sys')
- 
+
     Is supports 'with' semantic for indentation blocks creation
     Ex:
     # Python code
@@ -159,8 +159,8 @@ class CodeFile:
         """
         Append to the existing line without line ending
         """
-        self.out.write(x)        
- 
+        self.out.write(x)
+
     def __call__(self, text):
         """
         Supports 'object()' semantic, i.e.
@@ -189,6 +189,7 @@ class CppFile(CodeFile):
     """
     This class extends CodeFile class with some specific C++ constructions
     """
+
     def __init__(self, filename, writer=None):
         """
         Create C++ source file

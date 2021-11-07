@@ -116,19 +116,23 @@ class TestIndentation(unittest.TestCase):
         self.assertEqual('\ta', Indentation(level=1).indent('a'))
 
     def test_with_level_1_and_single_whitespace(self):
-        self.assertEqual(' a', Indentation(level=1, whitespace=' ').indent('a'))
+        self.assertEqual(' a', Indentation(
+            level=1, whitespace=' ').indent('a'))
 
     def test_with_level_1_and_four_whitespace(self):
-        self.assertEqual('    a', Indentation(level=1, whitespace='    ').indent('a'))
+        self.assertEqual('    a', Indentation(
+            level=1, whitespace='    ').indent('a'))
 
     def test_with_level_2(self):
         self.assertEqual('\t\ta', Indentation(level=2).indent('a'))
 
     def test_with_level_2_and_single_whitespace(self):
-        self.assertEqual('  a', Indentation(level=2, whitespace=' ').indent('a'))
+        self.assertEqual('  a', Indentation(
+            level=2, whitespace=' ').indent('a'))
 
     def test_with_level_2_and_four_whitespace(self):
-        self.assertEqual('        a', Indentation(level=2, whitespace='    ').indent('a'))
+        self.assertEqual('        a', Indentation(
+            level=2, whitespace='    ').indent('a'))
 
 
 class TestVariable(unittest.TestCase):
@@ -143,31 +147,39 @@ class TestVariable(unittest.TestCase):
 class TestVariableDeclaration(unittest.TestCase):
 
     def test_with_name_and_type_only(self):
-        self.assertEqual('int a;', VariableDeclaration(Variable(name='a', type='int')).code())
+        self.assertEqual('int a;', VariableDeclaration(
+            Variable(name='a', type='int')).code())
 
     def test_with_qualifiers(self):
-        self.assertEqual('const int a;', VariableDeclaration(Variable(name='a', type='int', qualifier=Const())).code())
+        self.assertEqual('const int a;', VariableDeclaration(
+            Variable(name='a', type='int', qualifier=Const())).code())
 
     def test_with_init_value_and_const_qualifer(self):
-        self.assertEqual('const int a = 0;', VariableDeclaration(Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+        self.assertEqual('const int a = 0;', VariableDeclaration(
+            Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
 
     def test_with_init_value_and_constexpr_qualifer(self):
-        self.assertEqual('constexpr int a = 0;', VariableDeclaration(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+        self.assertEqual('constexpr int a = 0;', VariableDeclaration(
+            Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
 
 
 class TestVariableDefinition(unittest.TestCase):
 
     def test_with_name_and_type_only(self):
-        self.assertEqual('int a;', VariableDefinition(Variable(name='a', type='int')).code())
+        self.assertEqual('int a;', VariableDefinition(
+            Variable(name='a', type='int')).code())
 
     def test_with_qualifiers(self):
-        self.assertEqual('const int a;', VariableDefinition(Variable(name='a', type='int', qualifier=Const())).code())
+        self.assertEqual('const int a;', VariableDefinition(
+            Variable(name='a', type='int', qualifier=Const())).code())
 
     def test_with_init_value_and_const_qualifer(self):
-        self.assertEqual('const int a = 0;', VariableDefinition(Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+        self.assertEqual('const int a = 0;', VariableDefinition(
+            Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
 
     def test_with_init_value_and_constexpr_qualifer(self):
-        self.assertEqual('constexpr int a = 0;', VariableDefinition(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+        self.assertEqual('constexpr int a = 0;', VariableDefinition(
+            Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
 
     # def test_with_ref_to_parent(self):
     #     self.assertEqual('int MyClass::a;', VariableDefinition(Variable(name='a', type='int', init_value='0', ref_to_parent=)).code())
@@ -176,16 +188,20 @@ class TestVariableDefinition(unittest.TestCase):
 class TestConstructorDefinition(unittest.TestCase):
 
     def test_with_name_and_type_only(self):
-        self.assertEqual('a()', VariableConstructorDefinition(Variable(name='a', type='int')).code())
+        self.assertEqual('a()', VariableConstructorDefinition(
+            Variable(name='a', type='int')).code())
 
     def test_with_qualifiers(self):
-        self.assertEqual('a()', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Const())).code())
+        self.assertEqual('a()', VariableConstructorDefinition(
+            Variable(name='a', type='int', qualifier=Const())).code())
 
     def test_with_init_value_and_const_qualifer(self):
-        self.assertEqual('a(0)', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+        self.assertEqual('a(0)', VariableConstructorDefinition(
+            Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
 
     def test_with_init_value_and_constexpr_qualifer(self):
-        self.assertEqual('a(0)', VariableConstructorDefinition(Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+        self.assertEqual('a(0)', VariableConstructorDefinition(
+            Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
 
 
 class TestFunction(unittest.TestCase):
@@ -197,20 +213,24 @@ class TestFunction(unittest.TestCase):
 class TestFunctionDeclaration(unittest.TestCase):
 
     def test_default_return_type_void(self):
-        self.assertEqual('void a();', FunctionDeclaration(Function(name='a')).code())
+        self.assertEqual('void a();', FunctionDeclaration(
+            Function(name='a')).code())
 
     def test_pure_virtual(self):
-        self.assertEqual('virtual void a() = 0;', FunctionDeclaration(Function(name='a', qualifier=Virtual(), postfix_qualifier=Pure())).code())
+        self.assertEqual('virtual void a() = 0;', FunctionDeclaration(
+            Function(name='a', qualifier=Virtual(), postfix_qualifier=Pure())).code())
 
     def test_with_one_arg(self):
-        self.assertEqual('void a(int x);', FunctionDeclaration(Function(name='a').with_arg('int x')).code())
+        self.assertEqual('void a(int x);', FunctionDeclaration(
+            Function(name='a').with_arg('int x')).code())
 
     def test_with_two_args(self):
-        self.assertEqual('void a(int x, float y);', FunctionDeclaration(Function(name='a').with_arg('int x').with_arg('float y')).code())
-        
-        
+        self.assertEqual('void a(int x, float y);', FunctionDeclaration(
+            Function(name='a').with_arg('int x').with_arg('float y')).code())
+
+
 class TestAllmanStyle(unittest.TestCase):
-    
+
     def test_open_brace_on_line_after_function(self):
         def example_main() -> str:
             return 'return 0;'
@@ -219,10 +239,10 @@ class TestAllmanStyle(unittest.TestCase):
             {
             \treturn 0;
             }"""), AllmanStyle().code(implementation_handle=example_main))
-        
-        
+
+
 class TestKnRStyle(unittest.TestCase):
-    
+
     def test_open_brace_on_same_line_as_function(self):
         def example_main() -> str:
             return 'return 0;'
@@ -235,13 +255,16 @@ class TestKnRStyle(unittest.TestCase):
 class TestFunctionDefinition(unittest.TestCase):
 
     def test_default_return_type_void(self):
-        self.assertEqual('void a() {\n}', FunctionDefinition(Function(name='a'), brace_strategy=KnRStyle()).code())
+        self.assertEqual('void a() {\n}', FunctionDefinition(
+            Function(name='a'), brace_strategy=KnRStyle()).code())
 
     def test_default_with_one_arg(self):
-        self.assertEqual('void a(int x) {\n}', FunctionDefinition(Function(name='a').with_arg('int x'), brace_strategy=KnRStyle()).code())
+        self.assertEqual('void a(int x) {\n}', FunctionDefinition(
+            Function(name='a').with_arg('int x'), brace_strategy=KnRStyle()).code())
 
     def test_default_with_two_arg(self):
-        self.assertEqual('void a(int x, float y) {\n}', FunctionDefinition(Function(name='a').with_arg('int x').with_arg('float y'), brace_strategy=KnRStyle()).code())
+        self.assertEqual('void a(int x, float y) {\n}', FunctionDefinition(Function(
+            name='a').with_arg('int x').with_arg('float y'), brace_strategy=KnRStyle()).code())
 
     def test_default_with_implementation_handle(self):
         def do_something() -> str:
@@ -257,4 +280,3 @@ class TestFunctionDefinition(unittest.TestCase):
             \t\tvar->update();
             \t}
             }"""), FunctionDefinition(Function(name='a', implementation_handle=do_something), brace_strategy=KnRStyle()).code())
-

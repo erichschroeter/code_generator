@@ -9,7 +9,6 @@ Unit tests for C++ code generator
 """
 
 
-
 # Generate test data
 def generate_enum(output_dir='.'):
     """
@@ -102,8 +101,10 @@ def generate_func(output_dir='.'):
 
     functions = [CppFunction(name='GetParam', ret_type='int'),
                  CppFunction(name='Calculate', ret_type='void'),
-                 CppFunction(name='GetAnswer', ret_type='int', implementation_handle=function_body),
-                 CppFunction(name='Help', ret_type='char *', documentation='/// Returns the help documentation.'),
+                 CppFunction(name='GetAnswer', ret_type='int',
+                             implementation_handle=function_body),
+                 CppFunction(name='Help', ret_type='char *',
+                             documentation='/// Returns the help documentation.'),
                  ]
     for func in functions:
         func.render_to_string(hpp)
