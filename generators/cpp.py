@@ -55,6 +55,12 @@ class Extern(Qualifier):
         super().__init__(keyword='extern', decorator=decorator)
 
 
+class Pure(Qualifier):
+    
+    def __init__(self, decorator=None):
+        super().__init__(keyword='= 0', decorator=decorator)
+
+
 def is_const(qualifier: Qualifier) -> bool:
     if isinstance(qualifier, Const):
         return True
@@ -99,15 +105,6 @@ class CppLanguageElement(ABC):
             raise ValueError("CppElement.name cannot be empty")
 
 
-    @abstractmethod
-    def declaration(self) -> str:
-        pass
-
-    # @abstractmethod
-    # def definition(self) -> str:
-    #     pass
-
-
 @dataclass
 class Variable(CppLanguageElement):
     """The Python class that contains data for a C++ variable. """
@@ -121,10 +118,6 @@ class Variable(CppLanguageElement):
     def __post_init__(self):
         if not self.type:
             raise ValueError("CppElement.type cannot be empty")
-    
-
-    def declaration(self) -> str:
-        return f"{self.qualifier() + ' ' if self.qualifier else ''}{self.type} {self.name}{' = ' if self.init_value else ''}{self.init_value if self.init_value else ''};"
 
 
 @dataclass
@@ -134,17 +127,21 @@ class Function(CppLanguageElement):
     Parameters are passed as plain strings('int a', 'void p = NULL' etc)
     """
 
-    return_type: str = ''
+    return_type: Optional[str] = None
     scope: Optional[str] = None
     qualifier: Optional[Qualifier] = None
-    # is_pure: bool
+    postfix_qualifier: Optional[Qualifier] = None
+    # is_pure: bool = False
     implementation_handle: Optional[Callable] = None
     args: Optional[List[str]] = None
     
 
-    def add_argument(self, argument):
+    def with_arg(self, argument) -> 'Function':
         """Appends the argument to the list of function arguments."""
+        if not self.args:
+            self.args = []
         self.args.append(argument)
+        return self
 
 
     # def __init__(self, name: str, type: str, qualifier: Optional[Qualifier] = None, init_value: Optional[str] = None):
@@ -269,4 +266,28 @@ class VariableConstructorDefinition(CppDefinition):
             return indentation.indent(code)
         else:
             return code
+
+
+def simple_function_decl_def(cpp_element: Function, indentation=None) -> str:
+    qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
+    # scope = cpp_element.ref_to_parent.name + '::' if cpp_element.ref_to_parent else ''
+    return_type = cpp_element.return_type if cpp_element.return_type else 'void'
+    lhs = f"{qualifier}{return_type} {cpp_element.name}"
+    args = ', '.join(cpp_element.args) if cpp_element.args else ''
+    postfix_qualifier = ' ' + cpp_element.postfix_qualifier() if cpp_element.postfix_qualifier else ''
+    code = f"{lhs}({args}){postfix_qualifier};"
+    if indentation:
+        return indentation.indent(code)
+    else:
+        return code
+
+
+class FunctionDeclaration(CppDeclaration):
+    
+    def __init__(self, cpp_element: Function):
+        self.cpp_element = cpp_element
+
+
+    def code(self, indentation=None) -> str:
+        return simple_function_decl_def(self.cpp_element, indentation)
 
