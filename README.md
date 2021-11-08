@@ -1,17 +1,14 @@
-C++ Code Generator
-==============
+# C++ Code Generator
 
-Simple and straightforward code generator for creating C++ code. It also could be used for generating code in any programming language. Written in Python, works both with Python 2 and 3
+Simple and straightforward code generator for creating C++ code.
+It also could be used for generating code in any programming language.
+Written using Python 3.
 
 Every C++ element could render its current state to a string that could be evaluated as 
 a legal C++ construction.
 Some elements could be rendered to a pair of representations (C++ classes and functions declaration and implementation)
 
-### Special thanks
-
-Thanks to Eric Reynolds, the idea of this project mainly based on his article published on
-http://www.codeproject.com/Articles/571645/Really-simple-Cplusplus-code-generation-in-Python
-
+The idea of this project was mainly based on [Eric Reynold's article](http://www.codeproject.com/Articles/571645/Really-simple-Cplusplus-code-generation-in-Python).
 However, this solution has been both simplified and extended compared to the initial idea.
 
 ## Usage examples
@@ -155,15 +152,11 @@ cpp.newline(2)
 The following command will execute the unit tests.
 
 ```bash
-python -m unittest cpp_generator_tests.py
+python -m unittest
 ```
 
-### Updating unit tests fixed data
-After changing a unit test the fixed data needs to be updated to successfully pass the unit tests.
+or, using [pytest]{https://docs.pytest.org/en/6.2.x/}:
 
 ```bash
-python -c 'cpp_generator_tests import generate_reference_code; generate_reference_code()'
+python -m pytest
 ```
-
-After executing that command, the fixed data under `tests/` will be updated and will need to be committed to git.
- 
