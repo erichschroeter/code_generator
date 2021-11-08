@@ -3,56 +3,7 @@ from textwrap import dedent
 import unittest
 from code_generator import CppFile
 from cpp_generator import CppVariable
-from generators.cpp import Pure, VariableConstructorDefinition, Indentation, Static, Inline, VariableDefinition, Volatile, Const, Constexpr, Extern, Variable, VariableDeclaration, Virtual, is_const, is_constexpr
-
-
-class TestCppQualifiers(unittest.TestCase):
-
-    def test_static(self):
-        self.assertEqual('static', Static()())
-
-    def test_inline(self):
-        self.assertEqual('inline', Inline()())
-
-    def test_volatile(self):
-        self.assertEqual('volatile', Volatile()())
-
-    def test_virtual(self):
-        self.assertEqual('virtual', Virtual()())
-
-    def test_const(self):
-        self.assertEqual('const', Const()())
-
-    def test_constexpr(self):
-        self.assertEqual('constexpr', Constexpr()())
-
-    def test_extern(self):
-        self.assertEqual('extern', Extern()())
-
-    def test_pure(self):
-        self.assertEqual('= 0', Pure()())
-
-    def test_static_const(self):
-        self.assertEqual('static const', Static(Const())())
-
-
-class TestIsConst(unittest.TestCase):
-
-    def test_const_only(self):
-        self.assertTrue(is_const(Const()))
-
-    def test_static_const(self):
-        self.assertTrue(is_const(Static(Const())))
-
-
-class TestIsConstexpr(unittest.TestCase):
-
-    def test_constexpr_only(self):
-        self.assertTrue(is_constexpr(Constexpr()))
-
-    def test_static_constexpr(self):
-        self.assertTrue(is_constexpr(Static(Constexpr())))
-
+from generators.cpp import VariableConstructorDefinition, VariableDefinition, Const, Constexpr, Variable, VariableDeclaration
 
 class TestCppVariableGenerator(unittest.TestCase):
 
@@ -108,31 +59,6 @@ class TestCppVariableGenerator(unittest.TestCase):
         v = CppVariable(name="var1", type="char*", is_extern=True)
         v.render_to_string(cpp)
         self.assertIn('extern char* var1;', writer.getvalue())
-
-
-class TestIndentation(unittest.TestCase):
-
-    def test_with_level_1(self):
-        self.assertEqual('\ta', Indentation(level=1).indent('a'))
-
-    def test_with_level_1_and_single_whitespace(self):
-        self.assertEqual(' a', Indentation(
-            level=1, whitespace=' ').indent('a'))
-
-    def test_with_level_1_and_four_whitespace(self):
-        self.assertEqual('    a', Indentation(
-            level=1, whitespace='    ').indent('a'))
-
-    def test_with_level_2(self):
-        self.assertEqual('\t\ta', Indentation(level=2).indent('a'))
-
-    def test_with_level_2_and_single_whitespace(self):
-        self.assertEqual('  a', Indentation(
-            level=2, whitespace=' ').indent('a'))
-
-    def test_with_level_2_and_four_whitespace(self):
-        self.assertEqual('        a', Indentation(
-            level=2, whitespace='    ').indent('a'))
 
 
 class TestVariable(unittest.TestCase):
