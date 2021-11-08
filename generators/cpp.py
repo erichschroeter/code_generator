@@ -78,20 +78,9 @@ def is_constexpr(qualifier: Qualifier) -> bool:
     return False
 
 
-# TODO move CppDeclaration here
-# TODO move CppImplementation here
-# TODO move CppLanguageElement here
-# TODO move CppFunction here
 # TODO move CppEnum here
-# TODO move CppVariable here
 # TODO move CppArray here
 # TODO move CppClass here
-
-# TODO refactor CppLanguageElement to a dataclass
-# TODO refactor CppLanguageElement to accept a CppDeclaration using strategy pattern
-# TODO refactor CppLanguageElement to accept a CppImplementation using strategy pattern
-
-
 @dataclass
 class CppLanguageElement(ABC):
     """The base class for all C++ language elements."""
@@ -130,7 +119,6 @@ class Function(CppLanguageElement):
     scope: Optional[str] = None
     qualifier: Optional[Qualifier] = None
     postfix_qualifier: Optional[Qualifier] = None
-    # is_pure: bool = False
     implementation_handle: Optional[Callable[..., str]] = None
     args: Optional[List[str]] = None
 
@@ -140,20 +128,6 @@ class Function(CppLanguageElement):
             self.args = []
         self.args.append(argument)
         return self
-
-    # def __init__(self, name: str, type: str, qualifier: Optional[Qualifier] = None, init_value: Optional[str] = None):
-    #     pass
-
-    # def __post_init__(self):
-    #     if self.is_const and self.is_constexpr:
-    #         raise RuntimeError(
-    #             "Variable object can be either 'const' or 'constexpr', not both")
-    #     if self.is_constexpr and not self.initialization_value:
-    #         raise RuntimeError(
-    #             "Variable object must be initialized when 'constexpr'")
-    #     if self.is_static and self.is_extern:
-    #         raise RuntimeError(
-    #             "Variable object can be either 'extern' or 'static', not both")
 
 
 @dataclass
