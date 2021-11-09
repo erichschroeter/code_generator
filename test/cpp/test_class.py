@@ -83,8 +83,21 @@ class TestClassDefinition(unittest.TestCase):
         self.assertEqual('', ClassDefinition(
             Class(name='A'), brace_strategy=KnRStyle).code())
 
-    def test_one_public_function(self):
+    def test_one_function(self):
         self.assertEqual(dedent("""\
             void A::Foo() {
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='Foo')), brace_strategy=KnRStyle).code())
+
+    def test_two_functions(self):
+        def factorial():
+            return 'return n < 1 ? 1 : (n * factorial(n - 1));'
+        self.assertEqual(dedent("""\
+            int A::factorial(int n) {
+            \treturn n < 1 ? 1 : (n * factorial(n - 1));
+            }
+            void A::Foo() {
+            }"""), ClassDefinition(
+            Class(name='A')
+                .add(Function(name='factorial', return_type='int', args=['int n'], implementation_handle=factorial))
+                .add(Function(name='Foo')), brace_strategy=KnRStyle).code())

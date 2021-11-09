@@ -487,12 +487,13 @@ class ClassDefinition(CppDefinition):
             style = CodeStyleFactory(self.brace_strategy)
             functions = [
                 e for e, _v in self.cpp_element.elements if isinstance(e, Function)]
+            is_first_func = True
             for function in functions:
-                # scope_backup = function.scope
-                # function.scope = self.class_scope()
+                if not is_first_func:
+                    output_stream.write('\n')
                 output_stream.write(
                     self.factory.build_definition(function).code())
-                # function.scope = scope_backup # Reset back to what it was.
+                is_first_func = False
 
     def code(self, indentation=None) -> str:
         indentation = indentation if indentation else Indentation()
