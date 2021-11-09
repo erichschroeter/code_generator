@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from io import IOBase, StringIO
-from typing import Callable, List, Optional, Type
+from typing import Callable, List, Optional, Tuple, Type
 
 
 @dataclass
@@ -79,6 +80,16 @@ def is_constexpr(qualifier: Qualifier) -> bool:
     return False
 
 
+class Visibility(Enum):
+    """Supported C++ class access specifiers."""
+    def _generate_next_value_(name, start, count, last_values):
+        return name.lower()
+
+    PUBLIC = auto()
+    PRIVATE = auto()
+    PROTECTED = auto()
+
+
 # TODO move CppEnum here
 # TODO move CppArray here
 # TODO move CppClass here
@@ -135,21 +146,21 @@ class Function(CppLanguageElement):
 class Class(CppLanguageElement):
     """The Python class that contains data for a C++ class."""
 
-    members: Optional[List[Variable]] = None
-    methods: Optional[List[Function]] = None
+    members: Optional[List[Tuple[Variable, Visibility]]] = None
+    methods: Optional[List[Tuple[Function, Visibility]]] = None
 
-    def with_member(self, member: Variable) -> 'Class':
+    def with_member(self, member: Variable, visibility: Visibility=Visibility.PRIVATE) -> 'Class':
         """Appends the member to the list of class members."""
         if not self.members:
             self.members = []
-        self.members.append(member)
+        self.members.append((member, visibility))
         return self
 
-    def with_method(self, function: Function) -> 'Class':
+    def with_method(self, function: Function, visibility: Visibility=Visibility.PRIVATE) -> 'Class':
         """Appends the function to the list of class methods."""
         if not self.methods:
             self.methods = []
-        self.methods.append(function)
+        self.methods.append((function, visibility))
         return self
 
 
@@ -280,10 +291,14 @@ class BraceStrategy(ABC):
             self.writer.write('\n')
         self.writer.write(f"}}{self.postfix if self.postfix else ''}")
 
-    def write_line(self, line):
+    def write_line(self, line, enforce_newline=True):
         if line:
             self.writer.write(self.indentation.indent(line))
             self.is_ended_with_newline = line[-1] == '\n'
+            if enforce_newline:
+                if not line[-1] == '\n':
+                    self.writer.write('\n')
+                    self.is_ended_with_newline = True
 
     def write_lines(self, lines):
         if lines:
@@ -397,20 +412,48 @@ class FunctionDefinition(CppDefinition):
         with style(code, indentation) as os:
             os.write_lines(self.function_definition(indentation=indentation))
         code = code.getvalue()
-        if indentation:
-            return indentation.indent(code)
-        else:
-            return code
-
+        return code
 
 @dataclass
 class ClassDeclaration(CppDeclaration):
 
     brace_strategy: BraceStrategy = KnRStyle()
+    visibility: Visibility = Visibility.PRIVATE
+
+    def class_prototype(self) -> str:
+        return f"class {self.cpp_element.name}"
+
+    def member_declarations(self, output_stream, indentation=None) -> None:
+        if self.cpp_element.members:
+            last_visibility = self.visibility
+            for member, member_visibility in self.cpp_element.members:
+                if not member_visibility == last_visibility:
+                    indentation.level -= 1
+                    output_stream.write_line(f'{member_visibility.value}:\n')
+                    indentation.level += 1
+                    last_visibility = member_visibility
+                output_stream.write_line(VariableDeclaration(member).code())
+            self.visibility = last_visibility
+
+    def method_declarations(self, output_stream, indentation=None) -> None:
+        if self.cpp_element.methods:
+            last_visibility = self.visibility
+            for method, method_visibility in self.cpp_element.methods:
+                if not method_visibility == last_visibility:
+                    indentation.level -= 1
+                    output_stream.write_line(f'{method_visibility.value}:\n')
+                    indentation.level += 1
+                    last_visibility = method_visibility
+                output_stream.write_line(FunctionDeclaration(method).code())
+            self.visibility = last_visibility
 
     def code(self, indentation=None) -> str:
-        code = f"class {self.cpp_element.name}"
-        if indentation:
-            return indentation.indent(code)
-        else:
-            return code
+        indentation = indentation if indentation else Indentation()
+        code = StringIO()
+        code.write(self.class_prototype())
+        style = CodeStyleFactory(self.brace_strategy)
+        with style(code, indentation, postfix=';') as os:
+            self.member_declarations(os, indentation)
+            self.method_declarations(os, indentation)
+        code = code.getvalue()
+        return code
