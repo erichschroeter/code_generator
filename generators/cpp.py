@@ -147,21 +147,12 @@ class Class(CppLanguageElement):
     """The Python class that contains data for a C++ class."""
 
     elements: Optional[List[Tuple[CppLanguageElement, Visibility]]] = None
-    members: Optional[List[Tuple[Variable, Visibility]]] = None
-    methods: Optional[List[Tuple[Function, Visibility]]] = None
-
-    def with_member(self, member: Variable, visibility: Visibility=Visibility.PRIVATE) -> 'Class':
-        """Appends the member to the list of class elements."""
+    
+    def add(self, element: CppLanguageElement, visibility=Visibility.PRIVATE) -> 'Class':
+        """Appends the element to the list of class elements, creating the list lazily."""
         if not self.elements:
             self.elements = []
-        self.elements.append((member, visibility))
-        return self
-
-    def with_method(self, function: Function, visibility: Visibility=Visibility.PRIVATE) -> 'Class':
-        """Appends the function to the list of class elements."""
-        if not self.elements:
-            self.elements = []
-        self.elements.append((function, visibility))
+        self.elements.append((element, visibility))
         return self
 
 
@@ -416,8 +407,10 @@ class FunctionDefinition(CppDefinition):
         return code
 
 class CppLanguageElementFactory:
+    """Factory for creating declaration and definition instances."""
 
     def build_declaration(self, element) -> CppDeclaration:
+        """Returns a CppDeclaration for the given element."""
         if isinstance(element, Variable):
             return VariableDeclaration(element)
         elif isinstance(element, Function):
