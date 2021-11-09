@@ -146,21 +146,22 @@ class Function(CppLanguageElement):
 class Class(CppLanguageElement):
     """The Python class that contains data for a C++ class."""
 
+    elements: Optional[List[Tuple[CppLanguageElement, Visibility]]] = None
     members: Optional[List[Tuple[Variable, Visibility]]] = None
     methods: Optional[List[Tuple[Function, Visibility]]] = None
 
     def with_member(self, member: Variable, visibility: Visibility=Visibility.PRIVATE) -> 'Class':
-        """Appends the member to the list of class members."""
-        if not self.members:
-            self.members = []
-        self.members.append((member, visibility))
+        """Appends the member to the list of class elements."""
+        if not self.elements:
+            self.elements = []
+        self.elements.append((member, visibility))
         return self
 
     def with_method(self, function: Function, visibility: Visibility=Visibility.PRIVATE) -> 'Class':
-        """Appends the function to the list of class methods."""
-        if not self.methods:
-            self.methods = []
-        self.methods.append((function, visibility))
+        """Appends the function to the list of class elements."""
+        if not self.elements:
+            self.elements = []
+        self.elements.append((function, visibility))
         return self
 
 
@@ -414,37 +415,34 @@ class FunctionDefinition(CppDefinition):
         code = code.getvalue()
         return code
 
+class CppLanguageElementFactory:
+
+    def build_declaration(self, element) -> CppDeclaration:
+        if isinstance(element, Variable):
+            return VariableDeclaration(element)
+        elif isinstance(element, Function):
+            return FunctionDeclaration(element)
+
 @dataclass
 class ClassDeclaration(CppDeclaration):
 
     brace_strategy: BraceStrategy = KnRStyle()
     visibility: Visibility = Visibility.PRIVATE
+    factory: CppLanguageElementFactory = CppLanguageElementFactory()
 
     def class_prototype(self) -> str:
         return f"class {self.cpp_element.name}"
 
-    def member_declarations(self, output_stream, indentation=None) -> None:
-        if self.cpp_element.members:
+    def declarations(self, output_stream, indentation=None) -> None:
+        if self.cpp_element.elements:
             last_visibility = self.visibility
-            for member, member_visibility in self.cpp_element.members:
+            for member, member_visibility in self.cpp_element.elements:
                 if not member_visibility == last_visibility:
                     indentation.level -= 1
                     output_stream.write_line(f'{member_visibility.value}:\n')
                     indentation.level += 1
                     last_visibility = member_visibility
-                output_stream.write_line(VariableDeclaration(member).code())
-            self.visibility = last_visibility
-
-    def method_declarations(self, output_stream, indentation=None) -> None:
-        if self.cpp_element.methods:
-            last_visibility = self.visibility
-            for method, method_visibility in self.cpp_element.methods:
-                if not method_visibility == last_visibility:
-                    indentation.level -= 1
-                    output_stream.write_line(f'{method_visibility.value}:\n')
-                    indentation.level += 1
-                    last_visibility = method_visibility
-                output_stream.write_line(FunctionDeclaration(method).code())
+                output_stream.write_line(self.factory.build_declaration(member).code())
             self.visibility = last_visibility
 
     def code(self, indentation=None) -> str:
@@ -453,7 +451,6 @@ class ClassDeclaration(CppDeclaration):
         code.write(self.class_prototype())
         style = CodeStyleFactory(self.brace_strategy)
         with style(code, indentation, postfix=';') as os:
-            self.member_declarations(os, indentation)
-            self.method_declarations(os, indentation)
+            self.declarations(os, indentation)
         code = code.getvalue()
         return code
