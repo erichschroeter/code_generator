@@ -147,6 +147,7 @@ class Class(CppLanguageElement):
     """The Python class that contains data for a C++ class."""
 
     elements: Optional[List[Tuple[CppLanguageElement, Visibility]]] = None
+    parents: List[Tuple[str, Visibility]] = None
     
     def add(self, element: CppLanguageElement, visibility=Visibility.PRIVATE) -> 'Class':
         """Appends the element to the list of class elements, creating the list lazily."""
@@ -426,6 +427,12 @@ class ClassDeclaration(CppDeclaration):
     def class_prototype(self) -> str:
         return f"class {self.cpp_element.name}"
 
+    def class_inheritance(self) -> str:
+        parents = None
+        if self.cpp_element.parents:
+            parents = [f"{visibility.value} {name}" for name, visibility in self.cpp_element.parents]
+        return '' if not parents else f" : {', '.join(parents)}"
+
     def declarations(self, output_stream, indentation=None) -> None:
         if self.cpp_element.elements:
             last_visibility = self.visibility
@@ -442,6 +449,7 @@ class ClassDeclaration(CppDeclaration):
         indentation = indentation if indentation else Indentation()
         code = StringIO()
         code.write(self.class_prototype())
+        code.write(self.class_inheritance())
         style = CodeStyleFactory(self.brace_strategy)
         with style(code, indentation, postfix=';') as os:
             self.declarations(os, indentation)
