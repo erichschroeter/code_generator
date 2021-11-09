@@ -388,12 +388,15 @@ class FunctionDefinition(CppDefinition):
 
     brace_strategy: Type[BraceStrategy] = KnRStyle
 
+    def function_return_type(self) -> str:
+        return self.cpp_element.return_type if self.cpp_element.return_type else 'void'
+
     def function_prototype(self) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
         scope = self.cpp_element.ref_to_parent.name + \
             '::' if self.cpp_element.ref_to_parent else ''
-        return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
-        lhs = f"{qualifier}{return_type} {scope}{self.cpp_element.name}"
+        return_type = self.function_return_type()
+        lhs = f"{qualifier}{return_type + ' ' if return_type else ''}{scope}{self.cpp_element.name}"
         args = ', '.join(
             self.cpp_element.args) if self.cpp_element.args else ''
         postfix_qualifier = ' ' + \
@@ -413,8 +416,40 @@ class FunctionDefinition(CppDefinition):
         return code
 
 
-class CppLanguageElementFactory:
+@dataclass
+class ConstructorDefinition(FunctionDefinition):
+    
+    def function_return_type(self) -> str:
+        """Returns None since constructors don't have a return type."""
+        return None
+
+    def initializer_list(self, indentation=None) -> List[str]:
+        items = None
+        if self.cpp_element.ref_to_parent:
+            members = [e for e, _v in self.cpp_element.ref_to_parent.elements if isinstance(e, Variable)]
+            if members:
+                items = [VariableConstructorDefinition(member).code() for member in members]
+        return items
+
+    def code(self, indentation=None) -> str:
+        code = StringIO()
+        code.write(self.function_prototype())
+        initializer_list = self.initializer_list()
+        if initializer_list:
+            code.write(' :\n')
+            code.write(',\n'.join(initializer_list))
+        style = CodeStyleFactory(self.brace_strategy)
+        with style(code, indentation) as os:
+            os.write_lines(self.function_definition(indentation=indentation))
+        code = code.getvalue()
+        return code
+
+
+@dataclass
+class CppLanguageElementClassFactory:
     """Factory for creating declaration and definition instances."""
+    
+    name: str
 
     def build_declaration(self, element) -> CppDeclaration:
         """Returns a CppDeclaration for the given element."""
@@ -428,7 +463,10 @@ class CppLanguageElementFactory:
         if isinstance(element, Variable):
             return VariableDefinition(element)
         elif isinstance(element, Function):
-            return FunctionDefinition(element)
+            if element.name == self.name:
+                return ConstructorDefinition(element)
+            else:
+                return FunctionDefinition(element)
 
 
 @dataclass
@@ -436,7 +474,10 @@ class ClassDeclaration(CppDeclaration):
 
     brace_strategy: BraceStrategy = KnRStyle()
     visibility: Visibility = Visibility.PRIVATE
-    factory: CppLanguageElementFactory = CppLanguageElementFactory()
+    factory: CppLanguageElementClassFactory = field(init=False)
+    
+    def __post_init__(self):
+        self.factory = CppLanguageElementClassFactory(self.cpp_element.name)
 
     def class_prototype(self) -> str:
         return f"class {self.cpp_element.name}"
@@ -477,7 +518,10 @@ class ClassDeclaration(CppDeclaration):
 class ClassDefinition(CppDefinition):
 
     brace_strategy: BraceStrategy = KnRStyle()
-    factory: CppLanguageElementFactory = CppLanguageElementFactory()
+    factory: CppLanguageElementClassFactory = field(init=False)
+    
+    def __post_init__(self):
+        self.factory = CppLanguageElementClassFactory(self.cpp_element.name)
 
     def class_scope(self) -> str:
         return f"{self.cpp_element.name}::"

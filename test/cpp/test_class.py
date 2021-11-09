@@ -89,6 +89,30 @@ class TestClassDefinition(unittest.TestCase):
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='Foo')), brace_strategy=KnRStyle).code())
 
+    def test_constructor(self):
+        self.assertEqual(dedent("""\
+            A::A() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='A')), brace_strategy=KnRStyle).code())
+
+    def test_constructor_with_one_arg(self):
+        self.assertEqual(dedent("""\
+            A::A() :
+            x(1) {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1')), brace_strategy=KnRStyle).code())
+
+    def test_constructor_with_two_args(self):
+        self.assertEqual(dedent("""\
+            A::A() :
+            x(0),
+            y(3.14) {
+            }"""), ClassDefinition(
+            Class(name='A')
+                .add(Function(name='A'))
+                .add(Variable(name='x', type='int', init_value='0'))
+                .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
+
     def test_two_functions(self):
         def factorial():
             return 'return n < 1 ? 1 : (n * factorial(n - 1));'
