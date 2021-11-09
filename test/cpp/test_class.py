@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from generators.cpp import Class, ClassDeclaration, Function, KnRStyle, Variable, Visibility
+from generators.cpp import Class, ClassDeclaration, ClassDefinition, Function, KnRStyle, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -60,9 +60,9 @@ class TestClassDeclaration(unittest.TestCase):
             \tfloat y;
             };"""), ClassDeclaration(
             Class(name='A')
-                .add(Variable(name='x', type='int'), visibility=Visibility.PRIVATE)
-                .add(Function(name='Foo'), visibility=Visibility.PUBLIC)
-                .add(Variable(name='y', type='float'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
+            .add(Variable(name='x', type='int'), visibility=Visibility.PRIVATE)
+            .add(Function(name='Foo'), visibility=Visibility.PUBLIC)
+            .add(Variable(name='y', type='float'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
 
     def test_inheritance_with_one_private(self):
         self.assertEqual(dedent("""\
@@ -75,3 +75,16 @@ class TestClassDeclaration(unittest.TestCase):
             class Dog : public Animal, private Mammal {
             };"""), ClassDeclaration(
             Class(name='Dog', parents=[('Animal', Visibility.PUBLIC), ('Mammal', Visibility.PRIVATE)]), brace_strategy=KnRStyle).code())
+
+
+class TestClassDefinition(unittest.TestCase):
+
+    def test_no_elements(self):
+        self.assertEqual('', ClassDefinition(
+            Class(name='A'), brace_strategy=KnRStyle).code())
+
+    def test_one_public_function(self):
+        self.assertEqual(dedent("""\
+            void A::Foo() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='Foo')), brace_strategy=KnRStyle).code())

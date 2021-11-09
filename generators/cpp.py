@@ -128,7 +128,6 @@ class Function(CppLanguageElement):
     """
 
     return_type: Optional[str] = None
-    scope: Optional[str] = None
     qualifier: Optional[Qualifier] = None
     postfix_qualifier: Optional[Qualifier] = None
     implementation_handle: Optional[Callable[..., str]] = None
@@ -148,11 +147,15 @@ class Class(CppLanguageElement):
 
     elements: Optional[List[Tuple[CppLanguageElement, Visibility]]] = None
     parents: List[Tuple[str, Visibility]] = None
-    
+
     def add(self, element: CppLanguageElement, visibility=Visibility.PRIVATE) -> 'Class':
-        """Appends the element to the list of class elements, creating the list lazily."""
+        """
+        Appends the element to the list of class elements, creating the list lazily.
+        The element.ref_to_parent is set to this class.
+        """
         if not self.elements:
             self.elements = []
+        element.ref_to_parent = self
         self.elements.append((element, visibility))
         return self
 
@@ -324,7 +327,8 @@ class AllmanStyle(BraceStrategy):
     def __enter__(self):
         """Open code block."""
         self.writer.write(f"\n{self.indentation.indent('{')}\n")
-        super().__enter__() # after writing the first indented brace since __enter__ increments indent level
+        # after writing the first indented brace since __enter__ increments indent level
+        super().__enter__()
         self.is_ended_with_newline = True
         return self
 
@@ -386,9 +390,10 @@ class FunctionDefinition(CppDefinition):
 
     def function_prototype(self) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
-        # scope = self.cpp_element.ref_to_parent.name + '::' if self.cpp_element.ref_to_parent else ''
+        scope = self.cpp_element.ref_to_parent.name + \
+            '::' if self.cpp_element.ref_to_parent else ''
         return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
-        lhs = f"{qualifier}{return_type} {self.cpp_element.name}"
+        lhs = f"{qualifier}{return_type} {scope}{self.cpp_element.name}"
         args = ', '.join(
             self.cpp_element.args) if self.cpp_element.args else ''
         postfix_qualifier = ' ' + \
@@ -407,6 +412,7 @@ class FunctionDefinition(CppDefinition):
         code = code.getvalue()
         return code
 
+
 class CppLanguageElementFactory:
     """Factory for creating declaration and definition instances."""
 
@@ -416,6 +422,14 @@ class CppLanguageElementFactory:
             return VariableDeclaration(element)
         elif isinstance(element, Function):
             return FunctionDeclaration(element)
+
+    def build_definition(self, element) -> CppDefinition:
+        """Returns a CppDeclaration for the given element."""
+        if isinstance(element, Variable):
+            return VariableDefinition(element)
+        elif isinstance(element, Function):
+            return FunctionDefinition(element)
+
 
 @dataclass
 class ClassDeclaration(CppDeclaration):
@@ -430,7 +444,8 @@ class ClassDeclaration(CppDeclaration):
     def class_inheritance(self) -> str:
         parents = None
         if self.cpp_element.parents:
-            parents = [f"{visibility.value} {name}" for name, visibility in self.cpp_element.parents]
+            parents = [f"{visibility.value} {name}" for name,
+                       visibility in self.cpp_element.parents]
         return '' if not parents else f" : {', '.join(parents)}"
 
     def declarations(self, output_stream, indentation=None) -> None:
@@ -442,7 +457,8 @@ class ClassDeclaration(CppDeclaration):
                     output_stream.write_line(f'{member_visibility.value}:\n')
                     indentation.level += 1
                     last_visibility = member_visibility
-                output_stream.write_line(self.factory.build_declaration(member).code())
+                output_stream.write_line(
+                    self.factory.build_declaration(member).code())
             self.visibility = last_visibility
 
     def code(self, indentation=None) -> str:
@@ -453,5 +469,34 @@ class ClassDeclaration(CppDeclaration):
         style = CodeStyleFactory(self.brace_strategy)
         with style(code, indentation, postfix=';') as os:
             self.declarations(os, indentation)
+        code = code.getvalue()
+        return code
+
+
+@dataclass
+class ClassDefinition(CppDefinition):
+
+    brace_strategy: BraceStrategy = KnRStyle()
+    factory: CppLanguageElementFactory = CppLanguageElementFactory()
+
+    def class_scope(self) -> str:
+        return f"{self.cpp_element.name}::"
+
+    def definitions(self, output_stream, indentation=None) -> None:
+        if self.cpp_element.elements:
+            style = CodeStyleFactory(self.brace_strategy)
+            functions = [
+                e for e, _v in self.cpp_element.elements if isinstance(e, Function)]
+            for function in functions:
+                # scope_backup = function.scope
+                # function.scope = self.class_scope()
+                output_stream.write(
+                    self.factory.build_definition(function).code())
+                # function.scope = scope_backup # Reset back to what it was.
+
+    def code(self, indentation=None) -> str:
+        indentation = indentation if indentation else Indentation()
+        code = StringIO()
+        self.definitions(code, indentation)
         code = code.getvalue()
         return code

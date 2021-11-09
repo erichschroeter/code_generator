@@ -3,7 +3,7 @@ from textwrap import dedent
 import unittest
 from code_generator import CppFile
 from cpp_generator import CppFunction
-from generators.cpp import AllmanStyle, Const, Function, FunctionDeclaration, FunctionDefinition, KnRStyle, Pure, Virtual
+from generators.cpp import AllmanStyle, Class, Const, Function, FunctionDeclaration, FunctionDefinition, KnRStyle, Pure, Virtual
 
 
 def handle_to_factorial(self, cpp):
@@ -51,11 +51,11 @@ class TestCppFunctionGenerator(unittest.TestCase):
         writer = io.StringIO()
         cpp = CppFile(None, writer=writer)
         factorial_function = CppFunction(name='factorial', ret_type='int', is_constexpr=True,
-                                         implementation_handle=handle_to_factorial, documentation='/// Calculates and returns the factorial of \p n.')
+                                         implementation_handle=handle_to_factorial, documentation='/// Calculates and returns the factorial of \\p n.')
         factorial_function.add_argument('int n')
         factorial_function.render_to_string(cpp)
         self.assertIn(dedent('''\
-            /// Calculates and returns the factorial of \p n.
+            /// Calculates and returns the factorial of \\p n.
             constexpr int factorial(int n)
             {
             \treturn n < 1 ? 1 : (n * factorial(n - 1));
@@ -120,6 +120,10 @@ class TestFunctionDefinition(unittest.TestCase):
     def test_default_return_type_void(self):
         self.assertEqual('void a() {\n}', FunctionDefinition(
             Function(name='a'), brace_strategy=KnRStyle).code())
+
+    def test_scope(self):
+        self.assertEqual('void MyClass::a() {\n}', FunctionDefinition(
+            Function(name='a', ref_to_parent=Class(name='MyClass')), brace_strategy=KnRStyle).code())
 
     def test_default_with_one_arg(self):
         self.assertEqual('void a(int x) {\n}', FunctionDefinition(
