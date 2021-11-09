@@ -92,11 +92,13 @@ class TestAllmanStyle(unittest.TestCase):
     def test_open_brace_on_line_after_function(self):
         def example_main() -> str:
             return 'return 0;'
-        self.assertEqual(dedent("""\
-
+        actual = io.StringIO()
+        with AllmanStyle(writer=actual) as code:
+            code.write(example_main())
+        self.assertEqual(actual.getvalue(), dedent("""
             {
-            \treturn 0;
-            }"""), AllmanStyle().code(implementation_handle=example_main))
+            return 0;
+            }"""))
 
 
 class TestKnRStyle(unittest.TestCase):
@@ -104,25 +106,28 @@ class TestKnRStyle(unittest.TestCase):
     def test_open_brace_on_same_line_as_function(self):
         def example_main() -> str:
             return 'return 0;'
-        self.assertEqual(dedent("""\
+        actual = io.StringIO()
+        with KnRStyle(writer=actual) as code:
+            code.write(example_main())
+        self.assertEqual(actual.getvalue(), dedent("""\
              {
-            \treturn 0;
-            }"""), KnRStyle().code(implementation_handle=example_main))
+            return 0;
+            }"""))
 
 
 class TestFunctionDefinition(unittest.TestCase):
 
     def test_default_return_type_void(self):
         self.assertEqual('void a() {\n}', FunctionDefinition(
-            Function(name='a'), brace_strategy=KnRStyle()).code())
+            Function(name='a'), brace_strategy=KnRStyle).code())
 
     def test_default_with_one_arg(self):
         self.assertEqual('void a(int x) {\n}', FunctionDefinition(
-            Function(name='a').with_arg('int x'), brace_strategy=KnRStyle()).code())
+            Function(name='a').with_arg('int x'), brace_strategy=KnRStyle).code())
 
     def test_default_with_two_arg(self):
         self.assertEqual('void a(int x, float y) {\n}', FunctionDefinition(Function(
-            name='a').with_arg('int x').with_arg('float y'), brace_strategy=KnRStyle()).code())
+            name='a').with_arg('int x').with_arg('float y'), brace_strategy=KnRStyle).code())
 
     def test_default_with_implementation_handle(self):
         def do_something() -> str:
@@ -137,7 +142,7 @@ class TestFunctionDefinition(unittest.TestCase):
             \t{
             \t\tvar->update();
             \t}
-            }"""), FunctionDefinition(Function(name='a', implementation_handle=do_something), brace_strategy=KnRStyle()).code())
+            }"""), FunctionDefinition(Function(name='a', implementation_handle=do_something), brace_strategy=KnRStyle).code())
 
     def test_const_function(self):
         def example_accessor() -> str:
@@ -145,4 +150,4 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(dedent("""\
             int get_count() const {
             \treturn m_count;
-            }"""), FunctionDefinition(Function(name='get_count', return_type='int', postfix_qualifier=Const(), implementation_handle=example_accessor), brace_strategy=KnRStyle()).code())
+            }"""), FunctionDefinition(Function(name='get_count', return_type='int', postfix_qualifier=Const(), implementation_handle=example_accessor), brace_strategy=KnRStyle).code())

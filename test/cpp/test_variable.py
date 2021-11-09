@@ -5,6 +5,7 @@ from code_generator import CppFile
 from cpp_generator import CppVariable
 from generators.cpp import VariableConstructorDefinition, VariableDefinition, Const, Constexpr, Variable, VariableDeclaration
 
+
 class TestCppVariableGenerator(unittest.TestCase):
 
     def test_cpp_var_via_writer(self):

@@ -1,6 +1,7 @@
 import unittest
 from generators.cpp import Const, Constexpr, Pure, Indentation, Static, Inline, Volatile, Extern, Virtual, is_const, is_constexpr
 
+
 class TestCppQualifiers(unittest.TestCase):
 
     def test_static(self):
@@ -72,4 +73,3 @@ class TestIndentation(unittest.TestCase):
     def test_with_level_2_and_four_whitespace(self):
         self.assertEqual('        a', Indentation(
             level=2, whitespace='    ').indent('a'))
-

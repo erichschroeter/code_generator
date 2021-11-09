@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
+from io import IOBase, StringIO
+from typing import Callable, List, Optional, Type
 
 
 @dataclass
@@ -131,6 +132,28 @@ class Function(CppLanguageElement):
 
 
 @dataclass
+class Class(CppLanguageElement):
+    """The Python class that contains data for a C++ class."""
+
+    members: Optional[List[Variable]] = None
+    methods: Optional[List[Function]] = None
+
+    def with_member(self, member: Variable) -> 'Class':
+        """Appends the member to the list of class members."""
+        if not self.members:
+            self.members = []
+        self.members.append(member)
+        return self
+
+    def with_method(self, function: Function) -> 'Class':
+        """Appends the function to the list of class methods."""
+        if not self.methods:
+            self.methods = []
+        self.methods.append(function)
+        return self
+
+
+@dataclass
 class Indentation:
     """Represents the indentation level when writing code."""
 
@@ -238,11 +261,27 @@ class VariableConstructorDefinition(CppDefinition):
             return code
 
 
+@dataclass
 class BraceStrategy(ABC):
 
+    writer: IOBase = StringIO()
+    indentation: Indentation = Indentation()
+    postfix: Optional[str] = None
+    is_ended_with_newline: bool = False
+
     @abstractmethod
-    def code(self, implementation_handle: Callable[..., str], indentation=None) -> str:
+    def __enter__(self):
         pass
+
+    @abstractmethod
+    def __exit__(self, *_):
+        if not self.is_ended_with_newline:
+            self.writer.write('\n')
+
+    def write(self, data):
+        if data:
+            self.writer.write(data)
+            self.is_ended_with_newline = data[-1] == '\n'
 
 
 class AllmanStyle(BraceStrategy):
@@ -258,17 +297,16 @@ class AllmanStyle(BraceStrategy):
     }
     """
 
-    def code(self, implementation_handle: Callable[..., str], indentation=None) -> str:
-        code = implementation_handle() if implementation_handle else ''
-        indentation = indentation
-        if not indentation:
-            indentation = Indentation(level=1)
-        else:
-            indentation.level += 1
-        lines = [indentation.indent(line) for line in code.split('\n')]
-        code = '\n'.join(lines)
-        indentation.level -= 1
-        return f"\n{indentation.indent('{')}\n{code}\n{indentation.indent('}')}"
+    def __enter__(self):
+        """Open code block."""
+        self.writer.write(f"\n{self.indentation.indent('{')}\n")
+        self.indentation.level += 1
+        return self
+
+    def __exit__(self, *_):
+        """Close code block."""
+        super().__exit__(self, *_)
+        self.writer.write(f"}}{self.postfix if self.postfix else ''}")
 
 
 class KnRStyle(BraceStrategy):
@@ -283,20 +321,28 @@ class KnRStyle(BraceStrategy):
     }
     """
 
-    def code(self, implementation_handle: Callable[..., str], indentation=None) -> str:
-        code = implementation_handle() if implementation_handle else None
-        indentation = indentation
-        if not indentation:
-            indentation = Indentation(level=1)
-        else:
-            indentation.level += 1
-        lines = [indentation.indent(line)
-                 for line in code.split('\n')] if code else []
-        code = '\n'.join(lines)
-        # reset indentation level to prior value upon entering this function
-        indentation.level -= 1
-        newline = '\n'  # workaround for no backslash in f string
-        return f" {{\n{code}{newline if code else ''}{indentation.indent('}')}"
+    def __enter__(self):
+        """Open code block."""
+        self.writer.write(" {\n")
+        self.is_ended_with_newline = True
+        return self
+
+    def __exit__(self, *_):
+        """Close code block."""
+        super().__exit__(self, *_)
+        self.writer.write(f"}}{self.postfix if self.postfix else ''}")
+
+
+@dataclass
+class CodeStyleFactory:
+
+    code_style: Type[BraceStrategy]
+
+    def __call__(self, stream: IOBase = None, indentation: Indentation = None, postfix: str = None) -> BraceStrategy:
+        writer = stream if stream else StringIO()
+        indentation = indentation if indentation else Indentation()
+        postfix = postfix if postfix else ''
+        return self.code_style(writer=writer, indentation=indentation, postfix=postfix)
 
 
 class FunctionDeclaration(CppDeclaration):
@@ -320,9 +366,9 @@ class FunctionDeclaration(CppDeclaration):
 @dataclass
 class FunctionDefinition(CppDefinition):
 
-    brace_strategy: BraceStrategy = KnRStyle()
+    brace_strategy: Type[BraceStrategy] = KnRStyle
 
-    def code(self, indentation=None) -> str:
+    def function_prototype(self) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
         # scope = self.cpp_element.ref_to_parent.name + '::' if self.cpp_element.ref_to_parent else ''
         return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
@@ -331,7 +377,40 @@ class FunctionDefinition(CppDefinition):
             self.cpp_element.args) if self.cpp_element.args else ''
         postfix_qualifier = ' ' + \
             self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
-        code = f"{lhs}({args}){postfix_qualifier}{self.brace_strategy.code(self.cpp_element.implementation_handle, indentation)}"
+        return f"{lhs}({args}){postfix_qualifier}"
+
+    def function_definition(self, indentation=None) -> str:
+        code = self.cpp_element.implementation_handle(
+        ) if self.cpp_element.implementation_handle else None
+        indentation = indentation if indentation else Indentation()
+        indentation.level += 1
+        lines = [indentation.indent(line)
+                 for line in code.split('\n')] if code else []
+        code = '\n'.join(lines)
+        # reset indentation level to prior value upon entering this function
+        indentation.level -= 1
+        return code
+
+    def code(self, indentation=None) -> str:
+        code = StringIO()
+        code.write(self.function_prototype())
+        style = CodeStyleFactory(self.brace_strategy)
+        with style(code, indentation) as os:
+            os.write(self.function_definition(indentation=indentation))
+        code = code.getvalue()
+        if indentation:
+            return indentation.indent(code)
+        else:
+            return code
+
+
+@dataclass
+class ClassDeclaration(CppDeclaration):
+
+    brace_strategy: BraceStrategy = KnRStyle()
+
+    def code(self, indentation=None) -> str:
+        code = f"class {self.cpp_element.name}"
         if indentation:
             return indentation.indent(code)
         else:
