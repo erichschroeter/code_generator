@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from generators.cpp import Class, ClassDeclaration, ClassDefinition, Function, KnRStyle, Variable, Visibility
+from generators.cpp import Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Function, KnRStyle, SingleLineStyle, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -125,3 +125,42 @@ class TestClassDefinition(unittest.TestCase):
             Class(name='A')
                 .add(Function(name='factorial', return_type='int', args=['int n'], implementation_handle=factorial))
                 .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
+
+
+class TestClassArrayInitializer(unittest.TestCase):
+
+    def test_no_member(self):
+        self.assertEqual('{}', ClassArrayInitializer(
+            Class(name='A'), brace_strategy=SingleLineStyle).code())
+
+    def test_one_member(self):
+        self.assertEqual('{0}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='int')), brace_strategy=SingleLineStyle).code())
+
+    def test_two_members(self):
+        self.assertEqual('{0, 0}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='int')).add(Variable(name='y', type='int')), brace_strategy=SingleLineStyle).code())
+
+    def test_default_init_value_long(self):
+        self.assertEqual('{0}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='long')), brace_strategy=SingleLineStyle).code())
+
+    def test_default_init_value_string(self):
+        self.assertEqual('{""}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='string')), brace_strategy=SingleLineStyle).code())
+
+    def test_default_init_value_char(self):
+        self.assertEqual('{""}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='char *')), brace_strategy=SingleLineStyle).code())
+
+    def test_default_init_value_double(self):
+        self.assertEqual('{0.0}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='double')), brace_strategy=SingleLineStyle).code())
+
+    def test_default_init_value_float(self):
+        self.assertEqual('{0.0}', ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='float')), brace_strategy=SingleLineStyle).code())
+
+    def test_raises_error_with_type_unknown_and_no_init_value(self):
+        self.assertRaises(ValueError, ClassArrayInitializer(
+            Class(name='A').add(Variable(name='x', type='UnknownType')), brace_strategy=SingleLineStyle).code)

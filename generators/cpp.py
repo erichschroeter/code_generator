@@ -388,6 +388,23 @@ class KnRStyle(BraceStrategy):
         return self
 
 
+class SingleLineStyle(BraceStrategy):
+    """
+    Opening and closing braces are put on same line.
+
+    e.g. 
+    { 0, "", 2 }
+    """
+
+    def __enter__(self):
+        """Open code block."""
+        self.writer.write("{")
+        return self
+
+    def __exit__(self, *_):
+        self.writer.write(f"}}{self.postfix if self.postfix else ''}")
+
+
 @dataclass
 class CodeStyleFactory:
 
@@ -452,7 +469,7 @@ class FunctionDefinition(CppDefinition):
 
 @dataclass
 class ConstructorDefinition(FunctionDefinition):
-    
+
     def function_return_type(self) -> str:
         """Returns None since constructors don't have a return type."""
         return None
@@ -519,6 +536,33 @@ class ArrayDeclaration(VariableDeclaration):
         if self.is_declare_size:
             size = self.size_ref.name if self.size_ref else len(self.cpp_element.items) if self.cpp_element.items else 0
         return f"{lhs}[{size}];"
+
+
+@dataclass
+class ArrayDefinition(CppDefinition):
+
+    brace_strategy: Type[BraceStrategy] = KnRStyle
+
+    def array_prototype(self, size='') -> str:
+        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
+        return f"{qualifier}{self.cpp_element.type} {self.cpp_element.name}[{size}]"
+
+    def array_definition(self, output_stream, indentation=None) -> str:
+        lines = []
+        if self.cpp_element.items:
+            for item in self.cpp_element.items:
+                lines.append(f"{item}")
+        return ',\n'.join(lines)
+
+    def code(self, indentation=None) -> str:
+        code = StringIO()
+        code.write(self.array_prototype())
+        code.write(' =')
+        style = CodeStyleFactory(self.brace_strategy)
+        with style(code, indentation, ';') as os:
+            os.write_lines(self.array_definition(os, indentation))
+        code = code.getvalue()
+        return code
 
 
 @dataclass
@@ -614,6 +658,44 @@ class ClassDefinition(CppDefinition):
                 output_stream.write(
                     self.factory.build_definition(function).code())
                 is_first_func = False
+
+    def code(self, indentation=None) -> str:
+        indentation = indentation if indentation else Indentation()
+        code = StringIO()
+        self.definitions(code, indentation)
+        code = code.getvalue()
+        return code
+
+
+class DefaultValueFactory:
+    
+    def default_value(self, element) -> str:
+        if element.init_value:
+            return element.init_value
+        if 'int' in element.type or 'long' in element.type:
+            return '0'
+        elif 'string' in element.type or 'char' in element.type:
+            return '""'
+        elif 'float' in element.type or 'double' in element.type:
+            return '0.0'
+        raise ValueError(f"Cannot determine default init value for '{element.name}' of type: {element.type}")
+
+
+@dataclass
+class ClassArrayInitializer(CppDefinition):
+
+    brace_strategy: BraceStrategy = SingleLineStyle()
+
+    def definitions(self, output_stream, indentation=None) -> None:
+        style = CodeStyleFactory(self.brace_strategy)
+        with style(output_stream, indentation) as os:
+            members = []
+            if self.cpp_element.elements:
+                members = [
+                    e for e, _v in self.cpp_element.elements if isinstance(e, Variable)]
+            init_values = [member.init_value if member.init_value else DefaultValueFactory().default_value(member) for member in members]
+            init_values = ', '.join(init_values)
+            os.write(init_values)
 
     def code(self, indentation=None) -> str:
         indentation = indentation if indentation else Indentation()

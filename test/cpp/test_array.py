@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from generators.cpp import Array, ArrayDeclaration, Const, KnRStyle, Static, Variable
+from generators.cpp import Array, ArrayDeclaration, ArrayDefinition, Const, KnRStyle, Static, Variable
 
 
 class TestArray(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestArray(unittest.TestCase):
         self.assertRaises(ValueError, Array, name='x')
 
 
-class TestCppArrayDeclaration(unittest.TestCase):
+class TestArrayDeclaration(unittest.TestCase):
 
     def test_name_and_type_only(self):
         self.assertEqual("int A[0];", ArrayDeclaration(Array(name='A', type='int')).code())
@@ -34,3 +34,26 @@ class TestCppArrayDeclaration(unittest.TestCase):
         self.assertEqual("int A[2];", ArrayDeclaration(Array(name='A', type='int')
             .add(Variable(name='x', type='int'))
             .add(Variable(name='x', type='int'))).code())
+
+class TestArrayDefinition(unittest.TestCase):
+
+    def test_name_only(self):
+        self.assertEqual(dedent("""\
+            int A[] = {
+            };"""), ArrayDefinition(
+            Array(name='A', type='int'), brace_strategy=KnRStyle).code())
+
+    def test_one_element(self):
+        self.assertEqual(dedent("""\
+            int A[] = {
+            \t0
+            };"""), ArrayDefinition(
+            Array(name='A', type='int').add('0'), brace_strategy=KnRStyle).code())
+
+    def test_two_element(self):
+        self.assertEqual(dedent("""\
+            int A[] = {
+            \t0,
+            \t1
+            };"""), ArrayDefinition(
+            Array(name='A', type='int').add('0').add('1'), brace_strategy=KnRStyle).code())

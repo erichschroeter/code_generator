@@ -4,13 +4,13 @@ import unittest
 from generators.cpp import Enum, EnumDeclaration, KnRStyle
 
 
-class TestCppEnum(unittest.TestCase):
+class TestEnum(unittest.TestCase):
 
     def test_raises_error_with_empty_name(self):
         self.assertRaises(ValueError, Enum)
 
 
-class TestCppEnumDeclaration(unittest.TestCase):
+class TestEnumDeclaration(unittest.TestCase):
 
     def test_name_only(self):
         self.assertEqual(dedent("""\
