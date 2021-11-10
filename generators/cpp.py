@@ -90,7 +90,6 @@ class Visibility(PythonEnum):
     PROTECTED = auto()
 
 
-# TODO move CppArray here
 @dataclass
 class CppLanguageElement(ABC):
     """The base class for all C++ language elements."""
@@ -105,6 +104,11 @@ class CppLanguageElement(ABC):
 
 
 @dataclass
+class Namespace(CppLanguageElement):
+    pass
+
+
+@dataclass
 class Variable(CppLanguageElement):
     """The Python class that contains data for a C++ variable. """
 
@@ -115,6 +119,21 @@ class Variable(CppLanguageElement):
     def __post_init__(self):
         if not self.type:
             raise ValueError("CppElement.type cannot be empty")
+
+
+class DefaultValueFactory:
+    """Factory class to support getting default values for known C++ types."""
+    
+    def default_value(self, element: Variable) -> str:
+        if element.init_value:
+            return element.init_value
+        if 'int' in element.type or 'long' in element.type:
+            return '0'
+        elif 'string' in element.type or 'char' in element.type:
+            return '""'
+        elif 'float' in element.type or 'double' in element.type:
+            return '0.0'
+        raise ValueError(f"Cannot determine default init value for '{element.name}' of type: {element.type}")
 
 
 @dataclass
@@ -250,57 +269,60 @@ class CppDefinition(CppCodeGenerator):
         pass
 
 
-def simple_variable_decl_def(cpp_element: Variable, indentation=None) -> str:
+def variable_prototype(cpp_element: Variable, use_ref_to_parent=False) -> str:
+    """
+    Returns a variable with its qualifiers, type, and name.
+    
+    ```
+    const int x
+    const int MyClass::x
+    ```
+    """
     qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
-    lhs = f"{qualifier}{cpp_element.type} {cpp_element.name}"
-    code = f"{lhs};"
-    if cpp_element.init_value and (is_const(cpp_element.qualifier) or is_constexpr(cpp_element.qualifier)):
-        code = f"{lhs}{' = ' if cpp_element.init_value else ''}{cpp_element.init_value if cpp_element.init_value else ''};"
-    if indentation:
-        return indentation.indent(code)
-    else:
-        return code
+    scoped_name = f"{cpp_element.ref_to_parent.name}::{cpp_element.name}" if use_ref_to_parent and cpp_element.ref_to_parent else cpp_element.name
+    return f"{qualifier}{cpp_element.type} {scoped_name}"
 
 
 class VariableDeclaration(CppDeclaration):
-
-    def __init__(self, cpp_element: Variable):
-        self.cpp_element = cpp_element
+    """
+    Generates a variable declaration.
+    
+    ```
+    int x;
+    ```
+    """
 
     def code(self, indentation=None) -> str:
-        return simple_variable_decl_def(self.cpp_element, indentation)
+        return f"{variable_prototype(self.cpp_element)};"
 
 
 class VariableDefinition(CppDefinition):
-
-    def __init__(self, cpp_element: Variable):
-        self.cpp_element = cpp_element
+    """
+    Generates a variable definition.
+    
+    ```
+    int x = 0;
+    ```
+    """
 
     def code(self, indentation=None) -> str:
-        return simple_variable_decl_def(self.cpp_element, indentation)
+        if self.cpp_element.init_value:
+            return f"{variable_prototype(self.cpp_element, True)} = {self.cpp_element.init_value};"
+        return f"{variable_prototype(self.cpp_element, True)} = {DefaultValueFactory().default_value(self.cpp_element)};"
 
 
 class VariableConstructorDefinition(CppDefinition):
     """
-    Generates constructor definition C++ code for a Variable.
+    Generates a constructor definition C++ code for a Variable.
 
-    e.g. Constructor initialization
-    SomeClass(int value) :
-    a(value)
-    {
-    }
+    ```
+    my_var(0)
+    ```
     """
-
-    def __init__(self, cpp_element: Variable):
-        self.cpp_element = cpp_element
 
     def code(self, indentation=None) -> str:
         value = self.cpp_element.init_value if self.cpp_element.init_value else ''
-        code = f"{self.cpp_element.name}({value})"
-        if indentation:
-            return indentation.indent(code)
-        else:
-            return code
+        return f"{self.cpp_element.name}({value})"
 
 
 @dataclass
@@ -418,6 +440,13 @@ class CodeStyleFactory:
 
 
 class FunctionDeclaration(CppDeclaration):
+    """
+    Generates a function declaration.
+    
+    ```
+    int Foo();
+    ```
+    """
 
     def code(self, indentation=None) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
@@ -436,6 +465,15 @@ class FunctionDeclaration(CppDeclaration):
 
 @dataclass
 class FunctionDefinition(CppDefinition):
+    """
+    Generates a function definition.
+
+    ```
+    int foo() {
+        return 0;
+    }
+    ```
+    """
 
     brace_strategy: Type[BraceStrategy] = KnRStyle
 
@@ -469,6 +507,16 @@ class FunctionDefinition(CppDefinition):
 
 @dataclass
 class ConstructorDefinition(FunctionDefinition):
+    """
+    Generates a constructor definition.
+    
+    ```
+    Foo::Foo() :
+    x(0),
+    y(0) {
+    }
+    ```
+    """
 
     def function_return_type(self) -> str:
         """Returns None since constructors don't have a return type."""
@@ -498,6 +546,17 @@ class ConstructorDefinition(FunctionDefinition):
 
 @dataclass
 class EnumDeclaration(CppDeclaration):
+    """
+    Generates an enum declaration.
+    
+    ```
+    enum Color {
+            RED,
+            GREEN,
+            BLUE
+    };
+    ```
+    """
 
     brace_strategy: Type[BraceStrategy] = KnRStyle
 
@@ -525,6 +584,13 @@ class EnumDeclaration(CppDeclaration):
 
 @dataclass
 class ArrayDeclaration(VariableDeclaration):
+    """
+    Generates an array declaration.
+    
+    ```
+    int my_array[];
+    ```
+    """
 
     is_declare_size: bool = True
     size_ref: Optional[Variable] = None
@@ -540,6 +606,17 @@ class ArrayDeclaration(VariableDeclaration):
 
 @dataclass
 class ArrayDefinition(CppDefinition):
+    """
+    Generates an array definition.
+    
+    ```
+    int my_array[] = {
+            0,
+            1,
+            2
+    };
+    ```
+    """
 
     brace_strategy: Type[BraceStrategy] = KnRStyle
 
@@ -665,20 +742,6 @@ class ClassDefinition(CppDefinition):
         self.definitions(code, indentation)
         code = code.getvalue()
         return code
-
-
-class DefaultValueFactory:
-    
-    def default_value(self, element) -> str:
-        if element.init_value:
-            return element.init_value
-        if 'int' in element.type or 'long' in element.type:
-            return '0'
-        elif 'string' in element.type or 'char' in element.type:
-            return '""'
-        elif 'float' in element.type or 'double' in element.type:
-            return '0.0'
-        raise ValueError(f"Cannot determine default init value for '{element.name}' of type: {element.type}")
 
 
 @dataclass
