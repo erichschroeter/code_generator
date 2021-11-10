@@ -669,7 +669,7 @@ class CppLanguageElementClassFactory:
 @dataclass
 class ClassDeclaration(CppDeclaration):
 
-    brace_strategy: BraceStrategy = KnRStyle()
+    brace_strategy: BraceStrategy = KnRStyle
     visibility: Visibility = Visibility.PRIVATE
     factory: CppLanguageElementClassFactory = field(init=False)
     
@@ -714,7 +714,7 @@ class ClassDeclaration(CppDeclaration):
 @dataclass
 class ClassDefinition(CppDefinition):
 
-    brace_strategy: BraceStrategy = KnRStyle()
+    brace_strategy: BraceStrategy = KnRStyle
     factory: CppLanguageElementClassFactory = field(init=False)
     
     def __post_init__(self):
