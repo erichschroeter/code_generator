@@ -109,7 +109,6 @@ class Variable(CppLanguageElement):
     """The Python class that contains data for a C++ variable. """
 
     type: str = ''
-    scope: Optional[str] = None
     qualifier: Optional[Qualifier] = None
     init_value: Optional[str] = None
 
@@ -153,6 +152,28 @@ class Enum(CppLanguageElement):
         if not self.items:
             self.items = []
         self.items.append((item, value))
+        return self
+
+
+@dataclass
+class Array(Variable):
+    """The Python class that generates string representation for C++ array."""
+
+    type: str = ''
+    qualifier: Optional[Qualifier] = None
+    items: Optional[List[str]] = None
+
+    def __post_init__(self):
+        if not self.type:
+            raise ValueError("CppElement.type cannot be empty")
+
+    def add(self, item: str) -> 'Array':
+        """
+        Appends the item to the list of array items.
+        """
+        if not self.items:
+            self.items = []
+        self.items.append(item)
         return self
 
 
@@ -231,7 +252,6 @@ class CppDefinition(CppCodeGenerator):
 
 def simple_variable_decl_def(cpp_element: Variable, indentation=None) -> str:
     qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
-    # scope = cpp_element.ref_to_parent.name + '::' if cpp_element.ref_to_parent else ''
     lhs = f"{qualifier}{cpp_element.type} {cpp_element.name}"
     code = f"{lhs};"
     if cpp_element.init_value and (is_const(cpp_element.qualifier) or is_constexpr(cpp_element.qualifier)):
@@ -484,6 +504,21 @@ class EnumDeclaration(CppDeclaration):
             os.write_lines(self.enum_definition(os, indentation))
         code = code.getvalue()
         return code
+
+
+@dataclass
+class ArrayDeclaration(VariableDeclaration):
+
+    is_declare_size: bool = True
+    size_ref: Optional[Variable] = None
+
+    def code(self, indentation=None) -> str:
+        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
+        lhs = f"{qualifier}{self.cpp_element.type} {self.cpp_element.name}"
+        size = ''
+        if self.is_declare_size:
+            size = self.size_ref.name if self.size_ref else len(self.cpp_element.items) if self.cpp_element.items else 0
+        return f"{lhs}[{size}];"
 
 
 @dataclass
