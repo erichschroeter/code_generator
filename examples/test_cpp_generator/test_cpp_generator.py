@@ -1,8 +1,12 @@
-import unittest
+import sys
 import os
 
-from code_generator import *
-from cpp_generator import *
+# For this example, the Python path needs to be added so we can use code generator modules.
+GIT_TOP_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, GIT_TOP_DIR)
+
+from code_generator.code_generator import CppFile
+from code_generator.cpp_generator import CppArray, CppClass, CppEnum, CppFunction, CppVariable
 
 __doc__ = """
 Unit tests for C++ code generator
@@ -220,4 +224,4 @@ def generate_reference_code():
 
 
 if __name__ == "__main__":
-    unittest.main()
+    generate_reference_code()
