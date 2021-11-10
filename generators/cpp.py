@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum as PythonEnum, auto
 from io import IOBase, StringIO
 from typing import Callable, List, Optional, Tuple, Type
 
@@ -80,7 +80,7 @@ def is_constexpr(qualifier: Qualifier) -> bool:
     return False
 
 
-class Visibility(Enum):
+class Visibility(PythonEnum):
     """Supported C++ class access specifiers."""
     def _generate_next_value_(name, start, count, last_values):
         return name.lower()
@@ -90,9 +90,7 @@ class Visibility(Enum):
     PROTECTED = auto()
 
 
-# TODO move CppEnum here
 # TODO move CppArray here
-# TODO move CppClass here
 @dataclass
 class CppLanguageElement(ABC):
     """The base class for all C++ language elements."""
@@ -138,6 +136,23 @@ class Function(CppLanguageElement):
         if not self.args:
             self.args = []
         self.args.append(argument)
+        return self
+
+
+@dataclass
+class Enum(CppLanguageElement):
+    """The Python class that generates string representation for C++ enum."""
+    
+    prefix: str = ''
+    items: Optional[List[Tuple[str, str]]] = None
+    
+    def add(self, item: str, value: str=None) -> 'Enum':
+        """
+        Appends the item to the list of enum items.
+        """
+        if not self.items:
+            self.items = []
+        self.items.append((item, value))
         return self
 
 
@@ -369,7 +384,6 @@ class FunctionDeclaration(CppDeclaration):
 
     def code(self, indentation=None) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
-        # scope = self.cpp_element.ref_to_parent.name + '::' if self.cpp_element.ref_to_parent else ''
         return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
         lhs = f"{qualifier}{return_type} {self.cpp_element.name}"
         args = ', '.join(
@@ -441,6 +455,33 @@ class ConstructorDefinition(FunctionDefinition):
         style = CodeStyleFactory(self.brace_strategy)
         with style(code, indentation) as os:
             os.write_lines(self.function_definition(indentation=indentation))
+        code = code.getvalue()
+        return code
+
+
+@dataclass
+class EnumDeclaration(CppDeclaration):
+
+    brace_strategy: Type[BraceStrategy] = KnRStyle
+
+    def enum_prototype(self) -> str:
+        return f"enum {self.cpp_element.name}"
+
+    def enum_definition(self, output_stream, indentation=None) -> str:
+        lines = []
+        if self.cpp_element.items:
+            for name, value in self.cpp_element.items:
+                name = name if not self.cpp_element.prefix else f"{self.cpp_element.prefix}{name}"
+                value = f" = {value}" if value is not None else ''
+                lines.append(f"{name}{value}")
+        return ',\n'.join(lines)
+
+    def code(self, indentation=None) -> str:
+        code = StringIO()
+        code.write(self.enum_prototype())
+        style = CodeStyleFactory(self.brace_strategy)
+        with style(code, indentation, ';') as os:
+            os.write_lines(self.enum_definition(os, indentation))
         code = code.getvalue()
         return code
 
