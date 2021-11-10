@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from generators.cpp import Array, ArrayDeclaration, ArrayDefinition, Const, KnRStyle, Static, Variable
+from code_generator.generators.cpp import Array, ArrayDeclaration, ArrayDefinition, Const, KnRStyle, Static, Variable
 
 
 class TestArray(unittest.TestCase):

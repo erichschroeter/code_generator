@@ -1,5 +1,5 @@
 import unittest
-from generators.cpp import Const, Constexpr, Pure, Indentation, Static, Inline, Volatile, Extern, Virtual, is_const, is_constexpr
+from code_generator.generators.cpp import Const, Constexpr, Pure, Indentation, Static, Inline, Variable, VariableDefinition, VerbatimAboveDocs, Volatile, Extern, Virtual, is_const, is_constexpr
 
 
 class TestCppQualifiers(unittest.TestCase):

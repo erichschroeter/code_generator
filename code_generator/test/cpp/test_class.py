@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from generators.cpp import Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Function, KnRStyle, SingleLineStyle, Variable, Visibility
+from code_generator.generators.cpp import Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Function, KnRStyle, SingleLineStyle, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum as PythonEnum, auto
 from io import IOBase, StringIO
 from typing import Callable, List, Optional, Tuple, Type
+from .docs import Docs
 
 
 @dataclass
@@ -101,6 +102,53 @@ class CppLanguageElement(ABC):
     def __post_init__(self):
         if not self.name:
             raise ValueError("CppElement.name cannot be empty")
+
+
+@dataclass
+class CppDocs(Docs):
+    
+    cpp_element: CppLanguageElement
+
+
+class VerbatimAboveDocs(CppDocs):
+    """
+    Returns the value of the 'docs' attribute on a CppLanguageElement or empty string if None.
+    
+    ```
+    /// Example documentation for variable a.
+    int a = 0;
+    ```
+    """
+
+    def docs(self, attachment: str) -> str:
+        docs = self.cpp_element.docs if self.cpp_element.docs else ''
+        newline = '\n' if docs and attachment else ''
+        attachment = attachment if attachment else ''
+        return f"{docs}{newline}{attachment}"
+
+
+class VerbatimSameLineDocs(CppDocs):
+    """
+    Returns the value of the 'docs' attribute on a CppLanguageElement or empty string if None.
+    
+    ```
+    int a = 0; // Example documentation for variable a.
+    ```
+    """
+
+    def docs(self, attachment: str) -> str:
+        docs = self.cpp_element.docs if self.cpp_element.docs else ''
+        attachment = attachment if attachment else ''
+        return f"{attachment}{docs}"
+
+
+@dataclass
+class DocsFactory:
+
+    docs_generator: Type[CppDocs]
+
+    def __call__(self, element: CppLanguageElement) -> CppDocs:
+        return self.docs_generator(element)
 
 
 @dataclass
@@ -234,11 +282,20 @@ class CppCodeGenerator(ABC):
     """Generates C++ code for a CppLanguageElement."""
 
     cpp_element: CppLanguageElement
+    docs_generator: Type[CppDocs] = VerbatimAboveDocs
 
     @abstractmethod
     def code(self, indentation=None) -> str:
         """Generates C++ code."""
         pass
+
+    def docs(self, indentation=None) -> str:
+        """Returns documentation without the code itself."""
+        return DocsFactory(self.docs_generator)(self.cpp_element).docs(None)
+
+    def code_with_docs(self, indentation=None) -> str:
+        """Returns documentation paired with its documentation."""
+        return DocsFactory(self.docs_generator)(self.cpp_element).docs(self.code())
 
 
 class CppDeclaration(CppCodeGenerator):
@@ -250,6 +307,7 @@ class CppDeclaration(CppCodeGenerator):
     int GetItem();
     """
 
+    @abstractmethod
     def code(self, indentaton=None) -> str:
         """Generates C++ declaration code."""
         pass
@@ -264,6 +322,7 @@ class CppDefinition(CppCodeGenerator):
     int GetItem() {...}
     """
 
+    @abstractmethod
     def code(self, indentaton=None) -> str:
         """Generates C++ definition code."""
         pass

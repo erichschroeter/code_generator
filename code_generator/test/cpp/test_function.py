@@ -1,9 +1,9 @@
 import io
 from textwrap import dedent
 import unittest
-from code_generator import CppFile
-from cpp_generator import CppFunction
-from generators.cpp import AllmanStyle, Class, Const, Function, FunctionDeclaration, FunctionDefinition, KnRStyle, Pure, Virtual
+from code_generator.code_generator import CppFile
+from code_generator.cpp_generator import CppFunction
+from code_generator.generators.cpp import AllmanStyle, Class, Const, Function, FunctionDeclaration, FunctionDefinition, KnRStyle, Pure, Virtual
 
 
 def handle_to_factorial(self, cpp):

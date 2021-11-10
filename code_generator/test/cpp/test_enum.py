@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from generators.cpp import Enum, EnumDeclaration, KnRStyle
+from code_generator.generators.cpp import Enum, EnumDeclaration, KnRStyle
 
 
 class TestEnum(unittest.TestCase):
