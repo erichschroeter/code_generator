@@ -175,7 +175,7 @@ class DefaultValueFactory:
     def default_value(self, element: Variable) -> str:
         if element.init_value:
             return element.init_value
-        if 'int' in element.type or 'long' in element.type:
+        elif element.type in ['int', 'long', 'size_t']:
             return '0'
         elif 'string' in element.type or 'char' in element.type:
             return '""'
