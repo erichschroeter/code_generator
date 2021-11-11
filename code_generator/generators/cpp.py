@@ -524,10 +524,14 @@ class FunctionDeclaration(CppDeclaration):
     ```
     """
 
+    def function_return_type(self) -> str:
+        return self.cpp_element.return_type if self.cpp_element.return_type else 'void'
+
     def code(self, indentation=None) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
-        return_type = self.cpp_element.return_type if self.cpp_element.return_type else 'void'
-        lhs = f"{qualifier}{return_type} {self.cpp_element.name}"
+        return_type = self.function_return_type()
+        return_type = return_type + ' ' if return_type else ''
+        lhs = f"{qualifier}{return_type}{self.cpp_element.name}"
         args = ', '.join(
             self.cpp_element.args) if self.cpp_element.args else ''
         postfix_qualifier = ' ' + \
@@ -575,6 +579,13 @@ class FunctionDefinition(CppDefinition):
             os.write_lines(self.function_definition(indentation=indentation))
         code = code.getvalue()
         return code
+
+
+@dataclass
+class ConstructorDeclaration(FunctionDeclaration):
+
+    def function_return_type(self) -> str:
+        return None
 
 
 @dataclass
@@ -724,6 +735,8 @@ class CppLanguageElementClassFactory:
                 return ArrayDeclaration(element)
             return VariableDeclaration(element)
         elif isinstance(element, Function):
+            if element.name == self.name:
+                return ConstructorDeclaration(element)
             return FunctionDeclaration(element)
         elif isinstance(element, Class):
             if isinstance(element, Struct):
@@ -740,8 +753,7 @@ class CppLanguageElementClassFactory:
         elif isinstance(element, Function):
             if element.name == self.name:
                 return ConstructorDefinition(element)
-            else:
-                return FunctionDefinition(element)
+            return FunctionDefinition(element)
         elif isinstance(element, Class):
             if isinstance(element, Struct):
                 return StructDefinition(element)

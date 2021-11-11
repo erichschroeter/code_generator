@@ -19,6 +19,13 @@ class TestClassDeclaration(unittest.TestCase):
             };"""), ClassDeclaration(
             Class(name='A'), brace_strategy=KnRStyle).code())
 
+    def test_constructor(self):
+        self.assertEqual(dedent("""\
+            class A {
+            \tA();
+            };"""), ClassDeclaration(
+            Class(name='A').add(Function(name='A')), brace_strategy=KnRStyle).code())
+
     def test_one_public_element(self):
         self.assertEqual(dedent("""\
             class A {
