@@ -76,6 +76,13 @@ class TestClassDeclaration(unittest.TestCase):
             };"""), ClassDeclaration(
             Class(name='A').add(Enum(name='Color').add('RED'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
 
+    def test_array(self):
+        self.assertEqual(dedent("""\
+            class A {
+            \tint x[0];
+            };"""), ClassDeclaration(
+            Class(name='A').add(Array(name='x', type='int'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
+
     def test_alternating_visibility_elements(self):
         self.assertEqual(dedent("""\
             class A {

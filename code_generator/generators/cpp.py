@@ -229,6 +229,8 @@ class Array(Variable):
     type: str = ''
     qualifier: Optional[Qualifier] = None
     items: Optional[List[str]] = None
+    size_ref: Optional[Variable] = None
+    """Optional Variable reference to use as the array size."""
 
     def __post_init__(self):
         if not self.type:
@@ -656,21 +658,18 @@ class EnumDeclaration(CppDeclaration):
 class ArrayDeclaration(VariableDeclaration):
     """
     Generates an array declaration.
+    If `size_ref` is not `None` then the name will be used to declare the array size.
     
     ```
-    int my_array[];
+    int my_array[0];
+    int my_array[COUNT];
     ```
     """
-
-    is_declare_size: bool = True
-    size_ref: Optional[Variable] = None
 
     def code(self, indentation=None) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
         lhs = f"{qualifier}{self.cpp_element.type} {self.cpp_element.name}"
-        size = ''
-        if self.is_declare_size:
-            size = self.size_ref.name if self.size_ref else len(self.cpp_element.items) if self.cpp_element.items else 0
+        size = self.cpp_element.size_ref.name if self.cpp_element.size_ref else len(self.cpp_element.items) if self.cpp_element.items else 0
         return f"{lhs}[{size}];"
 
 
@@ -721,6 +720,8 @@ class CppLanguageElementClassFactory:
     def build_declaration(self, element) -> CppDeclaration:
         """Returns a CppDeclaration for the given element."""
         if isinstance(element, Variable):
+            if isinstance(element, Array):
+                return ArrayDeclaration(element)
             return VariableDeclaration(element)
         elif isinstance(element, Function):
             return FunctionDeclaration(element)
