@@ -264,6 +264,14 @@ class Class(CppLanguageElement):
 
 
 @dataclass
+class Struct(Class):
+    """The Python class that contains data for a C++ struct."""
+
+    def add(self, element: CppLanguageElement, visibility=Visibility.PUBLIC) -> 'Struct':
+        return super().add(element, visibility)
+
+
+@dataclass
 class Indentation:
     """Represents the indentation level when writing code."""
 
@@ -352,6 +360,10 @@ class VariableDeclaration(CppDeclaration):
     """
 
     def code(self, indentation=None) -> str:
+        if is_const(self.cpp_element.qualifier) or is_constexpr(self.cpp_element.qualifier):
+            if self.cpp_element.init_value:
+                return f"{variable_prototype(self.cpp_element, False)} = {self.cpp_element.init_value};"
+            return f"{variable_prototype(self.cpp_element, False)} = {DefaultValueFactory().default_value(self.cpp_element)};"
         return f"{variable_prototype(self.cpp_element)};"
 
 
@@ -402,6 +414,9 @@ class BraceStrategy(ABC):
         if not self.is_ended_with_newline:
             self.writer.write('\n')
         self.writer.write(f"}}{self.postfix if self.postfix else ''}")
+
+    def __call__(self, data):
+        self.write(data)
 
     def write_line(self, line, enforce_newline=True):
         if line:
@@ -825,3 +840,24 @@ class ClassArrayInitializer(CppDefinition):
         self.definitions(code, indentation)
         code = code.getvalue()
         return code
+
+
+@dataclass
+class StructDeclaration(ClassDeclaration):
+
+    visibility: Visibility = Visibility.PUBLIC
+
+    def class_prototype(self) -> str:
+        return f"struct {self.cpp_element.name}"
+
+
+@dataclass
+class StructDefinition(ClassDefinition):
+    """A convenience class the same as ClassDefinition."""
+    pass
+
+
+@dataclass
+class StructArrayInitializer(ClassArrayInitializer):
+    """A convenience class the same as ClassArrayInitializer."""
+    pass

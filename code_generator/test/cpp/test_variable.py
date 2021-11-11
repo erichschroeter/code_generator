@@ -3,7 +3,7 @@ from textwrap import dedent
 import unittest
 from code_generator.code_generator import CppFile
 from code_generator.cpp_generator import CppVariable
-from code_generator.generators.cpp import Namespace, VariableConstructorDefinition, VariableDefinition, Const, Constexpr, Variable, VariableDeclaration
+from code_generator.generators.cpp import Extern, Namespace, VariableConstructorDefinition, VariableDefinition, Const, Constexpr, Variable, VariableDeclaration
 
 
 class TestCppVariableGenerator(unittest.TestCase):
@@ -77,9 +77,17 @@ class TestVariableDeclaration(unittest.TestCase):
         self.assertEqual('int a;', VariableDeclaration(
             Variable(name='a', type='int')).code())
 
-    def test_qualifiers(self):
-        self.assertEqual('const int a;', VariableDeclaration(
+    def test_qualifier_const(self):
+        self.assertEqual('const int a = 0;', VariableDeclaration(
             Variable(name='a', type='int', qualifier=Const())).code())
+
+    def test_qualifier_constexpr(self):
+        self.assertEqual('constexpr int a = 0;', VariableDeclaration(
+            Variable(name='a', type='int', qualifier=Constexpr())).code())
+
+    def test_qualifier_non_const(self):
+        self.assertEqual('extern int a;', VariableDeclaration(
+            Variable(name='a', type='int', qualifier=Extern())).code())
 
     def test_init_value(self):
         self.assertEqual('int a;', VariableDeclaration(
