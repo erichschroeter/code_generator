@@ -2,7 +2,7 @@ from enum import Enum
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Enum, Function, KnRStyle, SingleLineStyle, Struct, Variable, Visibility
+from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Enum, Function, KnRStyle, SingleLineStyle, Static, Struct, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -128,6 +128,12 @@ class TestClassDefinition(unittest.TestCase):
             void A::Foo() {
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='Foo')), brace_strategy=KnRStyle).code())
+
+    def test_one_function_with_static(self):
+        self.assertEqual(dedent("""\
+            void A::Foo() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='Foo', qualifier=Static())), brace_strategy=KnRStyle).code())
 
     def test_constructor(self):
         self.assertEqual(dedent("""\

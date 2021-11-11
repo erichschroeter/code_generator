@@ -557,11 +557,10 @@ class FunctionDefinition(CppDefinition):
         return self.cpp_element.return_type if self.cpp_element.return_type else 'void'
 
     def function_prototype(self) -> str:
-        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
         scope = self.cpp_element.ref_to_parent.name + \
             '::' if self.cpp_element.ref_to_parent else ''
         return_type = self.function_return_type()
-        lhs = f"{qualifier}{return_type + ' ' if return_type else ''}{scope}{self.cpp_element.name}"
+        lhs = f"{return_type + ' ' if return_type else ''}{scope}{self.cpp_element.name}"
         args = ', '.join(
             self.cpp_element.args) if self.cpp_element.args else ''
         postfix_qualifier = ' ' + \
