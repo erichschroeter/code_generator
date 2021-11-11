@@ -1,7 +1,8 @@
+from enum import Enum
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Function, KnRStyle, SingleLineStyle, Variable, Visibility
+from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Enum, Function, KnRStyle, SingleLineStyle, Struct, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -57,6 +58,23 @@ class TestClassDeclaration(unittest.TestCase):
             \t};
             };"""), ClassDeclaration(
             Class(name='A').add(Class(name='B'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
+
+    def test_internal_struct(self):
+        self.assertEqual(dedent("""\
+            class A {
+            \tstruct B {
+            \t};
+            };"""), ClassDeclaration(
+            Class(name='A').add(Struct(name='B'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
+
+    def test_internal_enum(self):
+        self.assertEqual(dedent("""\
+            class A {
+            \tenum Color {
+            \t\tRED
+            \t};
+            };"""), ClassDeclaration(
+            Class(name='A').add(Enum(name='Color').add('RED'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
 
     def test_alternating_visibility_elements(self):
         self.assertEqual(dedent("""\

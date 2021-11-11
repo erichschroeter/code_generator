@@ -725,7 +725,11 @@ class CppLanguageElementClassFactory:
         elif isinstance(element, Function):
             return FunctionDeclaration(element)
         elif isinstance(element, Class):
+            if isinstance(element, Struct):
+                return StructDeclaration(element)
             return ClassDeclaration(element)
+        elif isinstance(element, Enum):
+            return EnumDeclaration(element)
         raise ValueError(f"Unsupported declaration for element '{element}'")
 
     def build_definition(self, element) -> CppDefinition:
@@ -738,6 +742,8 @@ class CppLanguageElementClassFactory:
             else:
                 return FunctionDefinition(element)
         elif isinstance(element, Class):
+            if isinstance(element, Struct):
+                return StructDefinition(element)
             return ClassDefinition(element)
         raise ValueError(f"Unsupported definition for element '{element}'")
 
