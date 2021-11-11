@@ -81,6 +81,14 @@ def is_constexpr(qualifier: Qualifier) -> bool:
     return False
 
 
+def is_static(qualifier: Qualifier) -> bool:
+    if isinstance(qualifier, Static):
+        return True
+    if qualifier and qualifier.decorator:
+        return is_static(qualifier.decorator)
+    return False
+
+
 class Visibility(PythonEnum):
     """Supported C++ class access specifiers."""
     def _generate_next_value_(name, start, count, last_values):
@@ -608,6 +616,7 @@ class ConstructorDefinition(FunctionDefinition):
         items = None
         if self.cpp_element.ref_to_parent:
             members = [e for e, _v in self.cpp_element.ref_to_parent.elements if isinstance(e, Variable)]
+            members = [m for m in members if not is_static(m.qualifier)]
             if members:
                 items = [VariableConstructorDefinition(member).code() for member in members]
         return items

@@ -159,6 +159,12 @@ class TestClassDefinition(unittest.TestCase):
                 .add(Variable(name='x', type='int', init_value='0'))
                 .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
 
+    def test_constructor_omits_static_arg(self):
+        self.assertEqual(dedent("""\
+            A::A() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1', qualifier=Static())), brace_strategy=KnRStyle).code())
+
     def test_two_functions(self):
         def factorial():
             return 'return n < 1 ? 1 : (n * factorial(n - 1));'
