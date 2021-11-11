@@ -413,7 +413,7 @@ class BraceStrategy(ABC):
         self.indentation.level -= 1
         if not self.is_ended_with_newline:
             self.writer.write('\n')
-        self.writer.write(f"}}{self.postfix if self.postfix else ''}")
+        self.writer.write(self.indentation.indent(f"}}{self.postfix if self.postfix else ''}"))
 
     def __call__(self, data):
         self.write(data)
@@ -530,11 +530,7 @@ class FunctionDeclaration(CppDeclaration):
             self.cpp_element.args) if self.cpp_element.args else ''
         postfix_qualifier = ' ' + \
             self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
-        code = f"{lhs}({args}){postfix_qualifier};"
-        if indentation:
-            return indentation.indent(code)
-        else:
-            return code
+        return f"{lhs}({args}){postfix_qualifier};"
 
 
 @dataclass
@@ -728,6 +724,9 @@ class CppLanguageElementClassFactory:
             return VariableDeclaration(element)
         elif isinstance(element, Function):
             return FunctionDeclaration(element)
+        elif isinstance(element, Class):
+            return ClassDeclaration(element)
+        raise ValueError(f"Unsupported declaration for element '{element}'")
 
     def build_definition(self, element) -> CppDefinition:
         """Returns a CppDeclaration for the given element."""
@@ -738,6 +737,9 @@ class CppLanguageElementClassFactory:
                 return ConstructorDefinition(element)
             else:
                 return FunctionDefinition(element)
+        elif isinstance(element, Class):
+            return ClassDefinition(element)
+        raise ValueError(f"Unsupported definition for element '{element}'")
 
 
 @dataclass
@@ -770,7 +772,7 @@ class ClassDeclaration(CppDeclaration):
                     indentation.level += 1
                     last_visibility = member_visibility
                 output_stream.write_line(
-                    self.factory.build_declaration(member).code())
+                    self.factory.build_declaration(member).code(indentation=indentation))
             self.visibility = last_visibility
 
     def code(self, indentation=None) -> str:

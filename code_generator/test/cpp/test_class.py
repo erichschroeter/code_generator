@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp import Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Function, KnRStyle, SingleLineStyle, Variable, Visibility
+from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Function, KnRStyle, SingleLineStyle, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -49,6 +49,14 @@ class TestClassDeclaration(unittest.TestCase):
             \tvoid Foo();
             };"""), ClassDeclaration(
             Class(name='A').add(Variable(name='x', type='int'), visibility=Visibility.PRIVATE).add(Function(name='Foo'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
+
+    def test_internal_class(self):
+        self.assertEqual(dedent("""\
+            class A {
+            \tclass B {
+            \t};
+            };"""), ClassDeclaration(
+            Class(name='A').add(Class(name='B'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
 
     def test_alternating_visibility_elements(self):
         self.assertEqual(dedent("""\
