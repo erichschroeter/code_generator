@@ -844,10 +844,10 @@ class ClassDeclaration(CppDeclaration):
 
     brace_strategy: BraceStrategy = KnRStyle
     visibility: Visibility = Visibility.PRIVATE
-    factory: CppLanguageElementClassFactory = field(init=False)
+    element_factory: CppLanguageElementClassFactory = field(init=False)
 
     def __post_init__(self):
-        self.factory = CppLanguageElementClassFactory(self.cpp_element.name)
+        self.element_factory = CppLanguageElementClassFactory(self.cpp_element.name)
 
     def class_prototype(self) -> str:
         return f"class {self.cpp_element.name}"
@@ -869,7 +869,7 @@ class ClassDeclaration(CppDeclaration):
                     indentation.level += 1
                     last_visibility = member_visibility
                 output_stream.write_line(
-                    self.factory.build_declaration(member).code(indentation=indentation))
+                    self.element_factory.build_declaration(member).code(indentation=indentation))
             self.visibility = last_visibility
 
     def code(self, indentation=None) -> str:
@@ -888,10 +888,10 @@ class ClassDeclaration(CppDeclaration):
 class ClassDefinition(CppDefinition):
 
     brace_strategy: BraceStrategy = KnRStyle
-    factory: CppLanguageElementClassFactory = field(init=False)
+    element_factory: CppLanguageElementClassFactory = field(init=False)
 
     def __post_init__(self):
-        self.factory = CppLanguageElementClassFactory(self.cpp_element.name)
+        self.element_factory = CppLanguageElementClassFactory(self.cpp_element.name)
 
     def class_scope(self) -> str:
         return f"{self.cpp_element.name}::"
@@ -919,7 +919,7 @@ class ClassDefinition(CppDefinition):
                 if not is_first_func:
                     output_stream.write('\n')
                 output_stream.write(
-                    self.factory.build_definition(cpp_element).code())
+                    self.element_factory.build_definition(cpp_element).code())
                 is_first_func = False
 
     def code(self, indentation=None) -> str:
