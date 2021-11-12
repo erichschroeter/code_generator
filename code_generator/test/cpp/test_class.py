@@ -119,6 +119,9 @@ class TestClassDeclaration(unittest.TestCase):
 
 class TestClassDefinition(unittest.TestCase):
 
+    def setUp(self):
+        self.username = 'User'
+
     def test_no_elements(self):
         self.assertEqual('', ClassDefinition(
             Class(name='A'), brace_strategy=KnRStyle).code())
@@ -129,7 +132,16 @@ class TestClassDefinition(unittest.TestCase):
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='Foo')), brace_strategy=KnRStyle).code())
 
-    def test_one_function_with_static(self):
+    def test_function_passing_context(self):
+        def say_hello(self):
+            return f'return "Hello, {self.username}!";'
+        self.assertEqual(dedent("""\
+            char * A::say_hello() {
+            \treturn "Hello, User!";
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='say_hello', return_type='char *', implementation_handle=say_hello, context=self)), brace_strategy=KnRStyle).code())
+
+    def test_qualified_function_omits_qualifier(self):
         self.assertEqual(dedent("""\
             void A::Foo() {
             }"""), ClassDefinition(
@@ -147,6 +159,13 @@ class TestClassDefinition(unittest.TestCase):
             x(1) {
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1')), brace_strategy=KnRStyle).code())
+
+    def test_constructor_with_array_arg(self):
+        self.assertEqual(dedent("""\
+            A::A() :
+            x(1, 2) {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='A')).add(Array(name='x', type='int', init_value='1, 2')), brace_strategy=KnRStyle).code())
 
     def test_constructor_with_two_args(self):
         self.assertEqual(dedent("""\

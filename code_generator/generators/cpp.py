@@ -208,6 +208,10 @@ class Function(CppLanguageElement):
     Optional list of tuple of args with its potential default value.
     Arg default values are defaulted to `None` if not specified.
     """
+    context: Optional[object] = None
+    """
+    An object that will be passed to the implementation_handle.
+    """
     
     def __post_init__(self):
         super().__post_init__()
@@ -594,6 +598,8 @@ class FunctionDefinition(CppDefinition):
         return f"{lhs}({args}){postfix_qualifier}"
 
     def function_definition(self, indentation=None) -> str:
+        if self.cpp_element.context:
+            return self.cpp_element.implementation_handle(self.cpp_element.context) if self.cpp_element.implementation_handle else None
         return self.cpp_element.implementation_handle() if self.cpp_element.implementation_handle else None
 
     def code(self, indentation=None) -> str:
