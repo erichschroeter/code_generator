@@ -178,13 +178,16 @@ class Variable(CppLanguageElement):
             raise ValueError("CppElement.type cannot be empty")
 
 
+def is_integral(type: str) -> bool:
+    return type in ['int', 'long', 'size_t']
+
 class DefaultValueFactory:
     """Factory class to support getting default values for known C++ types."""
 
     def default_value(self, element: Variable) -> str:
         if element.init_value:
             return element.init_value
-        elif element.type in ['int', 'long', 'size_t']:
+        elif is_integral(element.type):
             return '0'
         elif 'string' in element.type or 'char' in element.type:
             return '""'
@@ -409,6 +412,8 @@ class VariableDeclaration(CppDeclaration):
 
     def is_assignable(self, cpp_element: CppLanguageElement) -> bool:
         if isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier):
+            if is_integral(cpp_element.type) and is_const(cpp_element.qualifier):
+                return True
             return False
         elif is_constexpr(cpp_element.qualifier):
             if cpp_element.init_value:
@@ -419,7 +424,7 @@ class VariableDeclaration(CppDeclaration):
 
     def code(self, indentation=None) -> str:
         if self.is_assignable(self.cpp_element):
-            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {self.cpp_element.init_value};"
+            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {DefaultValueFactory().default_value(self.cpp_element)};"
         return f"{variable_prototype(self.cpp_element)};"
 
 
@@ -893,6 +898,8 @@ class ClassDefinition(CppDefinition):
 
     def is_translation_unit_element(self, cpp_element: CppLanguageElement) -> bool:
         if isinstance(cpp_element, Variable) and is_static(cpp_element.qualifier):
+            if is_const(cpp_element.qualifier) and is_integral(cpp_element.type):
+                return False
             return True
         elif isinstance(cpp_element, Function):
             return True

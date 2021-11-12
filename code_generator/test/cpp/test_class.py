@@ -34,11 +34,19 @@ class TestClassDeclaration(unittest.TestCase):
             };"""), ClassDeclaration(
             Class(name='A').add(Variable(name='x', type='int', qualifier=Static()), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
 
-    def test_static_const_member(self):
+    def test_static_const_non_integral_member(self):
         self.assertEqual(dedent("""\
             class A {
             public:
-            \tstatic const int x;
+            \tstatic const Object x;
+            };"""), ClassDeclaration(
+            Class(name='A').add(Variable(name='x', type='Object', qualifier=Static(Const())), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
+    def test_static_const_integral_member(self):
+        self.assertEqual(dedent("""\
+            class A {
+            public:
+            \tstatic const int x = 0;
             };"""), ClassDeclaration(
             Class(name='A').add(Variable(name='x', type='int', qualifier=Static(Const())), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
 
@@ -220,10 +228,19 @@ class TestClassDefinition(unittest.TestCase):
             .add(Variable(name='x', type='int', init_value='1', qualifier=Static(), ref_to_parent=cls))
             .add(Function(name='A')), brace_strategy=KnRStyle).code())
 
-    def test_static_const_member(self):
+    def test_static_const_non_integral_member(self):
         cls = Class(name='A')
         self.assertEqual(dedent("""\
-            const int A::x = 1;
+            const Object A::x = 1;
+            A::A() {
+            }"""), ClassDefinition(
+            cls
+            .add(Variable(name='x', type='Object', init_value='1', qualifier=Static(Const()), ref_to_parent=cls))
+            .add(Function(name='A')), brace_strategy=KnRStyle).code())
+
+    def test_omits_static_const_integral_member(self):
+        cls = Class(name='A')
+        self.assertEqual(dedent("""\
             A::A() {
             }"""), ClassDefinition(
             cls
