@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum as PythonEnum, auto
 from io import IOBase, StringIO
@@ -364,7 +365,20 @@ class CppDefinition(CppCodeGenerator):
         pass
 
 
-def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, with_qualifiers=True) -> str:
+def reduce_qualifiers(qualifier: Qualifier, exclude: List[Type[Qualifier]]) -> Qualifier:
+    """
+    Recursive function returning qualifier with the excluded Qualifier types omitted.
+    """
+    if not qualifier:
+        return qualifier
+    if qualifier.decorator:
+        qualifier.decorator = reduce_qualifiers(qualifier.decorator, exclude)
+    if type(qualifier) in exclude:
+        return qualifier.decorator
+    return qualifier
+
+
+def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: List[Type[Qualifier]]=None) -> str:
     """
     Returns a variable with its qualifiers, type, and name.
     
@@ -373,9 +387,11 @@ def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, with_qual
     const int MyClass::x
     ```
     """
-    qualifier = ''
-    if with_qualifiers:
-        qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
+    qualifier = cpp_element.qualifier
+    if exclude:
+        qualifier_copy = deepcopy(cpp_element.qualifier) # Don't want to modify cpp_element's qualifier
+        qualifier = reduce_qualifiers(qualifier_copy, exclude)
+    qualifier = qualifier() + ' ' if qualifier else ''
     scoped_name = f"{cpp_element.ref_to_parent.name}::{cpp_element.name}" if use_ref_to_parent and cpp_element.ref_to_parent else cpp_element.name
     return f"{qualifier}{cpp_element.type} {scoped_name}"
 
@@ -388,12 +404,19 @@ class VariableDeclaration(CppDeclaration):
     int x;
     ```
     """
+    
+    def is_assignable(self, cpp_element: CppLanguageElement) -> bool:
+        if isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier):
+            return False
+        elif is_constexpr(cpp_element.qualifier):
+            if cpp_element.init_value:
+                return True
+            raise ValueError(f"constexpr requires init_value to be assigned: '{cpp_element}'")
+        return cpp_element.init_value and is_const(self.cpp_element.qualifier)
 
     def code(self, indentation=None) -> str:
-        if is_const(self.cpp_element.qualifier) or is_constexpr(self.cpp_element.qualifier):
-            if self.cpp_element.init_value:
-                return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {self.cpp_element.init_value};"
-            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {DefaultValueFactory().default_value(self.cpp_element)};"
+        if self.is_assignable(self.cpp_element):
+            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {self.cpp_element.init_value};"
         return f"{variable_prototype(self.cpp_element)};"
 
 
@@ -405,11 +428,14 @@ class VariableDefinition(CppDefinition):
     int x = 0;
     ```
     """
+    
+    def is_class_member(self, cpp_element: CppLanguageElement) -> bool:
+        return isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier)
 
     def code(self, indentation=None) -> str:
         if self.cpp_element.init_value:
-            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True)} = {self.cpp_element.init_value};"
-        return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True)} = {DefaultValueFactory().default_value(self.cpp_element)};"
+            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])} = {self.cpp_element.init_value};"
+        return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])} = {DefaultValueFactory().default_value(self.cpp_element)};"
 
 
 class VariableConstructorDefinition(CppDefinition):
@@ -741,7 +767,7 @@ class ArrayDefinition(CppDefinition):
     brace_strategy: Type[BraceStrategy] = KnRStyle
 
     def array_prototype(self, size='') -> str:
-        return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, with_qualifiers=False)}[{size}]"
+        return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])}[{size}]"
 
     def array_definition(self, output_stream, indentation=None) -> str:
         lines = []

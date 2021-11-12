@@ -78,12 +78,16 @@ class TestVariableDeclaration(unittest.TestCase):
             Variable(name='a', type='int')).code())
 
     def test_qualifier_const(self):
-        self.assertEqual('const int a = 0;', VariableDeclaration(
+        self.assertEqual('const int a;', VariableDeclaration(
             Variable(name='a', type='int', qualifier=Const())).code())
 
     def test_qualifier_constexpr(self):
         self.assertEqual('constexpr int a = 0;', VariableDeclaration(
-            Variable(name='a', type='int', qualifier=Constexpr())).code())
+            Variable(name='a', type='int', init_value='0', qualifier=Constexpr())).code())
+
+    def test_qualifier_constexpr_raises_error_when_no_init_value(self):
+        self.assertRaises(ValueError, VariableDeclaration(
+            Variable(name='a', type='int', qualifier=Constexpr())).code)
 
     def test_qualifier_non_const(self):
         self.assertEqual('extern int a;', VariableDeclaration(

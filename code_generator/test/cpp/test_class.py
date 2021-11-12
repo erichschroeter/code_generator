@@ -26,6 +26,22 @@ class TestClassDeclaration(unittest.TestCase):
             };"""), ClassDeclaration(
             Class(name='A').add(Function(name='A')), brace_strategy=KnRStyle).code())
 
+    def test_static_member(self):
+        self.assertEqual(dedent("""\
+            class A {
+            public:
+            \tstatic int x;
+            };"""), ClassDeclaration(
+            Class(name='A').add(Variable(name='x', type='int', qualifier=Static()), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
+    def test_static_const_member(self):
+        self.assertEqual(dedent("""\
+            class A {
+            public:
+            \tstatic const int x;
+            };"""), ClassDeclaration(
+            Class(name='A').add(Variable(name='x', type='int', qualifier=Static(Const())), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
     def test_one_public_element(self):
         self.assertEqual(dedent("""\
             class A {
@@ -162,21 +178,28 @@ class TestClassDefinition(unittest.TestCase):
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='A')), brace_strategy=KnRStyle).code())
 
-    def test_constructor_with_one_arg(self):
+    def test_constructor_with_one_member(self):
         self.assertEqual(dedent("""\
             A::A() :
             x(1) {
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1')), brace_strategy=KnRStyle).code())
 
-    def test_constructor_with_array_arg(self):
+    def test_constructor_with_const_member(self):
+        self.assertEqual(dedent("""\
+            A::A() :
+            x(1) {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1', qualifier=Const())), brace_strategy=KnRStyle).code())
+
+    def test_constructor_with_array_member(self):
         self.assertEqual(dedent("""\
             A::A() :
             x(1, 2) {
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='A')).add(Array(name='x', type='int', init_value='1, 2')), brace_strategy=KnRStyle).code())
 
-    def test_constructor_with_two_args(self):
+    def test_constructor_with_two_members(self):
         self.assertEqual(dedent("""\
             A::A() :
             x(0),
@@ -187,9 +210,25 @@ class TestClassDefinition(unittest.TestCase):
                 .add(Variable(name='x', type='int', init_value='0'))
                 .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
 
-    def test_omits_static_const_member(self):
-        self.assertEqual('', ClassDefinition(
-            Class(name='A').add(Variable(name='x', type='int', init_value='1', qualifier=Const())), brace_strategy=KnRStyle).code())
+    def test_static_member(self):
+        cls = Class(name='A')
+        self.assertEqual(dedent("""\
+            int A::x = 1;
+            A::A() {
+            }"""), ClassDefinition(
+                cls
+                .add(Variable(name='x', type='int', init_value='1', qualifier=Static(), ref_to_parent=cls))
+                .add(Function(name='A')), brace_strategy=KnRStyle).code())
+
+    def test_static_const_member(self):
+        cls = Class(name='A')
+        self.assertEqual(dedent("""\
+            const int A::x = 1;
+            A::A() {
+            }"""), ClassDefinition(
+                cls
+                .add(Variable(name='x', type='int', init_value='1', qualifier=Static(Const()), ref_to_parent=cls))
+                .add(Function(name='A')), brace_strategy=KnRStyle).code())
 
     def test_omits_constexpr_member(self):
         self.assertEqual('', ClassDefinition(
