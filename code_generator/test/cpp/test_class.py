@@ -50,6 +50,22 @@ class TestClassDeclaration(unittest.TestCase):
             };"""), ClassDeclaration(
             Class(name='A').add(Variable(name='x', type='int', qualifier=Static(Const())), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
 
+    def test_constexpr_member(self):
+        self.assertEqual(dedent("""\
+            class A {
+            public:
+            \tconstexpr int x = 0;
+            };"""), ClassDeclaration(
+            Class(name='A').add(Variable(name='x', type='int', init_value='0', qualifier=Constexpr()), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
+    def test_static_constexpr_member(self):
+        self.assertEqual(dedent("""\
+            class A {
+            public:
+            \tstatic constexpr int x = 0;
+            };"""), ClassDeclaration(
+            Class(name='A').add(Variable(name='x', type='int', init_value='0', qualifier=Static(Constexpr())), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
     def test_one_public_element(self):
         self.assertEqual(dedent("""\
             class A {

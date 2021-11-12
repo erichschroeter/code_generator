@@ -411,15 +411,15 @@ class VariableDeclaration(CppDeclaration):
     """
 
     def is_assignable(self, cpp_element: CppLanguageElement) -> bool:
-        if isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier):
-            if is_integral(cpp_element.type) and is_const(cpp_element.qualifier):
-                return True
-            return False
-        elif is_constexpr(cpp_element.qualifier):
+        if is_constexpr(cpp_element.qualifier):
             if cpp_element.init_value:
                 return True
             raise ValueError(
                 f"constexpr requires init_value to be assigned: '{cpp_element}'")
+        if isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier):
+            if is_integral(cpp_element.type) and is_const(cpp_element.qualifier):
+                return True
+            return False
         return cpp_element.init_value and is_const(self.cpp_element.qualifier)
 
     def code(self, indentation=None) -> str:
