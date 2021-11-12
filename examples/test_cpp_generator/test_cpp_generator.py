@@ -1,12 +1,13 @@
+from code_generator.cpp_generator import CppArray, CppClass, CppEnum, CppFunction, CppVariable
+from code_generator.code_generator import CppFile
 import sys
 import os
 
 # For this example, the Python path needs to be added so we can use code generator modules.
-GIT_TOP_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+GIT_TOP_DIR = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, GIT_TOP_DIR)
 
-from code_generator.code_generator import CppFile
-from code_generator.cpp_generator import CppArray, CppClass, CppEnum, CppFunction, CppVariable
 
 __doc__ = """
 Unit tests for C++ code generator

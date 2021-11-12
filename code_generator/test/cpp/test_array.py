@@ -16,21 +16,26 @@ class TestArray(unittest.TestCase):
 class TestArrayDeclaration(unittest.TestCase):
 
     def test_name_and_type_only(self):
-        self.assertEqual("int A[0];", ArrayDeclaration(Array(name='A', type='int')).code())
+        self.assertEqual("int A[0];", ArrayDeclaration(
+            Array(name='A', type='int')).code())
 
     def test_size_ref(self):
-        self.assertEqual("int A[COUNT];", ArrayDeclaration(Array(name='A', type='int', size_ref=Variable(name='COUNT', type='int'))).code())
+        self.assertEqual("int A[COUNT];", ArrayDeclaration(
+            Array(name='A', type='int', size_ref=Variable(name='COUNT', type='int'))).code())
 
     def test_qualifiers(self):
-        self.assertEqual("static const int A[0];", ArrayDeclaration(Array(name='A', type='int', qualifier=Static(Const()))).code())
+        self.assertEqual("static const int A[0];", ArrayDeclaration(
+            Array(name='A', type='int', qualifier=Static(Const()))).code())
 
     def test_one_item(self):
-        self.assertEqual("int A[1];", ArrayDeclaration(Array(name='A', type='int').add(Variable(name='x', type='int'))).code())
+        self.assertEqual("int A[1];", ArrayDeclaration(
+            Array(name='A', type='int').add(Variable(name='x', type='int'))).code())
 
     def test_two_items(self):
         self.assertEqual("int A[2];", ArrayDeclaration(Array(name='A', type='int')
-            .add(Variable(name='x', type='int'))
-            .add(Variable(name='x', type='int'))).code())
+                                                       .add(Variable(name='x', type='int'))
+                                                       .add(Variable(name='x', type='int'))).code())
+
 
 class TestArrayDefinition(unittest.TestCase):
 

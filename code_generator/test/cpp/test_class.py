@@ -206,9 +206,9 @@ class TestClassDefinition(unittest.TestCase):
             y(3.14) {
             }"""), ClassDefinition(
             Class(name='A')
-                .add(Function(name='A'))
-                .add(Variable(name='x', type='int', init_value='0'))
-                .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
+            .add(Function(name='A'))
+            .add(Variable(name='x', type='int', init_value='0'))
+            .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
 
     def test_static_member(self):
         cls = Class(name='A')
@@ -216,9 +216,9 @@ class TestClassDefinition(unittest.TestCase):
             int A::x = 1;
             A::A() {
             }"""), ClassDefinition(
-                cls
-                .add(Variable(name='x', type='int', init_value='1', qualifier=Static(), ref_to_parent=cls))
-                .add(Function(name='A')), brace_strategy=KnRStyle).code())
+            cls
+            .add(Variable(name='x', type='int', init_value='1', qualifier=Static(), ref_to_parent=cls))
+            .add(Function(name='A')), brace_strategy=KnRStyle).code())
 
     def test_static_const_member(self):
         cls = Class(name='A')
@@ -226,9 +226,9 @@ class TestClassDefinition(unittest.TestCase):
             const int A::x = 1;
             A::A() {
             }"""), ClassDefinition(
-                cls
-                .add(Variable(name='x', type='int', init_value='1', qualifier=Static(Const()), ref_to_parent=cls))
-                .add(Function(name='A')), brace_strategy=KnRStyle).code())
+            cls
+            .add(Variable(name='x', type='int', init_value='1', qualifier=Static(Const()), ref_to_parent=cls))
+            .add(Function(name='A')), brace_strategy=KnRStyle).code())
 
     def test_omits_constexpr_member(self):
         self.assertEqual('', ClassDefinition(
@@ -244,8 +244,8 @@ class TestClassDefinition(unittest.TestCase):
             void A::Foo() {
             }"""), ClassDefinition(
             Class(name='A')
-                .add(Function(name='factorial', return_type='int', implementation_handle=factorial).with_arg('int n'))
-                .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
+            .add(Function(name='factorial', return_type='int', implementation_handle=factorial).with_arg('int n'))
+            .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
 
 
 class TestClassArrayInitializer(unittest.TestCase):

@@ -115,14 +115,14 @@ class CppLanguageElement(ABC):
 
 @dataclass
 class CppDocs(Docs):
-    
+
     cpp_element: CppLanguageElement
 
 
 class VerbatimAboveDocs(CppDocs):
     """
     Returns the value of the 'docs' attribute on a CppLanguageElement or empty string if None.
-    
+
     ```
     /// Example documentation for variable a.
     int a = 0;
@@ -139,7 +139,7 @@ class VerbatimAboveDocs(CppDocs):
 class VerbatimSameLineDocs(CppDocs):
     """
     Returns the value of the 'docs' attribute on a CppLanguageElement or empty string if None.
-    
+
     ```
     int a = 0; // Example documentation for variable a.
     ```
@@ -180,7 +180,7 @@ class Variable(CppLanguageElement):
 
 class DefaultValueFactory:
     """Factory class to support getting default values for known C++ types."""
-    
+
     def default_value(self, element: Variable) -> str:
         if element.init_value:
             return element.init_value
@@ -190,7 +190,8 @@ class DefaultValueFactory:
             return '""'
         elif 'float' in element.type or 'double' in element.type:
             return '0.0'
-        raise ValueError(f"Cannot determine default init value for '{element.name}' of type: {element.type}")
+        raise ValueError(
+            f"Cannot determine default init value for '{element.name}' of type: {element.type}")
 
 
 @dataclass
@@ -204,7 +205,7 @@ class Function(CppLanguageElement):
     qualifier: Optional[Qualifier] = None
     postfix_qualifier: Optional[Qualifier] = None
     implementation_handle: Optional[Callable[..., str]] = None
-    args: Optional[List[Tuple[str,str]]] = None
+    args: Optional[List[Tuple[str, str]]] = None
     """
     Optional list of tuple of args with its potential default value.
     Arg default values are defaulted to `None` if not specified.
@@ -213,7 +214,7 @@ class Function(CppLanguageElement):
     """
     An object that will be passed to the implementation_handle.
     """
-    
+
     def __post_init__(self):
         super().__post_init__()
         if not self.args is None:
@@ -235,11 +236,11 @@ class Function(CppLanguageElement):
 @dataclass
 class Enum(CppLanguageElement):
     """The Python class that generates string representation for C++ enum."""
-    
+
     prefix: str = ''
     items: Optional[List[Tuple[str, str]]] = None
-    
-    def add(self, item: str, value: str=None) -> 'Enum':
+
+    def add(self, item: str, value: str = None) -> 'Enum':
         """
         Appends the item to the list of enum items.
         """
@@ -378,10 +379,10 @@ def reduce_qualifiers(qualifier: Qualifier, exclude: List[Type[Qualifier]]) -> Q
     return qualifier
 
 
-def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: List[Type[Qualifier]]=None) -> str:
+def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: List[Type[Qualifier]] = None) -> str:
     """
     Returns a variable with its qualifiers, type, and name.
-    
+
     ```
     const int x
     const int MyClass::x
@@ -389,7 +390,8 @@ def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: 
     """
     qualifier = cpp_element.qualifier
     if exclude:
-        qualifier_copy = deepcopy(cpp_element.qualifier) # Don't want to modify cpp_element's qualifier
+        # Don't want to modify cpp_element's qualifier
+        qualifier_copy = deepcopy(cpp_element.qualifier)
         qualifier = reduce_qualifiers(qualifier_copy, exclude)
     qualifier = qualifier() + ' ' if qualifier else ''
     scoped_name = f"{cpp_element.ref_to_parent.name}::{cpp_element.name}" if use_ref_to_parent and cpp_element.ref_to_parent else cpp_element.name
@@ -399,19 +401,20 @@ def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: 
 class VariableDeclaration(CppDeclaration):
     """
     Generates a variable declaration.
-    
+
     ```
     int x;
     ```
     """
-    
+
     def is_assignable(self, cpp_element: CppLanguageElement) -> bool:
         if isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier):
             return False
         elif is_constexpr(cpp_element.qualifier):
             if cpp_element.init_value:
                 return True
-            raise ValueError(f"constexpr requires init_value to be assigned: '{cpp_element}'")
+            raise ValueError(
+                f"constexpr requires init_value to be assigned: '{cpp_element}'")
         return cpp_element.init_value and is_const(self.cpp_element.qualifier)
 
     def code(self, indentation=None) -> str:
@@ -423,12 +426,12 @@ class VariableDeclaration(CppDeclaration):
 class VariableDefinition(CppDefinition):
     """
     Generates a variable definition.
-    
+
     ```
     int x = 0;
     ```
     """
-    
+
     def is_class_member(self, cpp_element: CppLanguageElement) -> bool:
         return isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier)
 
@@ -469,7 +472,8 @@ class BraceStrategy(ABC):
         self.indentation.level -= 1
         if not self.is_ended_with_newline:
             self.writer.write('\n')
-        self.writer.write(self.indentation.indent(f"}}{self.postfix if self.postfix else ''}"))
+        self.writer.write(self.indentation.indent(
+            f"}}{self.postfix if self.postfix else ''}"))
 
     def __call__(self, data):
         self.write(data)
@@ -572,7 +576,7 @@ class CodeStyleFactory:
 class FunctionDeclaration(CppDeclaration):
     """
     Generates a function declaration.
-    
+
     ```
     int Foo();
     ```
@@ -619,7 +623,8 @@ class FunctionDefinition(CppDefinition):
             '::' if self.cpp_element.ref_to_parent else ''
         return_type = self.function_return_type()
         lhs = f"{return_type + ' ' if return_type else ''}{scope}{self.cpp_element.name}"
-        args = [arg for (arg, _default_value) in self.cpp_element.args if self.cpp_element.args] if self.cpp_element.args else []
+        args = [arg for (arg, _default_value)
+                in self.cpp_element.args if self.cpp_element.args] if self.cpp_element.args else []
         args = ', '.join(args) if args else ''
         postfix_qualifier = ' ' + \
             self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
@@ -651,7 +656,7 @@ class ConstructorDeclaration(FunctionDeclaration):
 class ConstructorDefinition(FunctionDefinition):
     """
     Generates a constructor definition.
-    
+
     ```
     Foo::Foo() :
     x(0),
@@ -676,7 +681,8 @@ class ConstructorDefinition(FunctionDefinition):
     def initializer_list(self, indentation=None) -> List[str]:
         items = None
         if self.cpp_element.ref_to_parent:
-            items = [VariableConstructorDefinition(e).code() for e, _v in self.cpp_element.ref_to_parent.elements if self.is_initializable(e)]
+            items = [VariableConstructorDefinition(e).code(
+            ) for e, _v in self.cpp_element.ref_to_parent.elements if self.is_initializable(e)]
         return items
 
     def code(self, indentation=None) -> str:
@@ -697,7 +703,7 @@ class ConstructorDefinition(FunctionDefinition):
 class EnumDeclaration(CppDeclaration):
     """
     Generates an enum declaration.
-    
+
     ```
     enum Color {
             RED,
@@ -736,7 +742,7 @@ class ArrayDeclaration(VariableDeclaration):
     """
     Generates an array declaration.
     If `size_ref` is not `None` then the name will be used to declare the array size.
-    
+
     ```
     int my_array[0];
     int my_array[COUNT];
@@ -746,7 +752,8 @@ class ArrayDeclaration(VariableDeclaration):
     def code(self, indentation=None) -> str:
         qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
         lhs = f"{qualifier}{self.cpp_element.type} {self.cpp_element.name}"
-        size = self.cpp_element.size_ref.name if self.cpp_element.size_ref else len(self.cpp_element.items) if self.cpp_element.items else 0
+        size = self.cpp_element.size_ref.name if self.cpp_element.size_ref else len(
+            self.cpp_element.items) if self.cpp_element.items else 0
         return f"{lhs}[{size}];"
 
 
@@ -754,7 +761,7 @@ class ArrayDeclaration(VariableDeclaration):
 class ArrayDefinition(CppDefinition):
     """
     Generates an array definition.
-    
+
     ```
     int my_array[] = {
             0,
@@ -789,7 +796,7 @@ class ArrayDefinition(CppDefinition):
 @dataclass
 class CppLanguageElementClassFactory:
     """Factory for creating declaration and definition instances."""
-    
+
     name: str
 
     def build_declaration(self, element) -> CppDeclaration:
@@ -833,7 +840,7 @@ class ClassDeclaration(CppDeclaration):
     brace_strategy: BraceStrategy = KnRStyle
     visibility: Visibility = Visibility.PRIVATE
     factory: CppLanguageElementClassFactory = field(init=False)
-    
+
     def __post_init__(self):
         self.factory = CppLanguageElementClassFactory(self.cpp_element.name)
 
@@ -877,7 +884,7 @@ class ClassDefinition(CppDefinition):
 
     brace_strategy: BraceStrategy = KnRStyle
     factory: CppLanguageElementClassFactory = field(init=False)
-    
+
     def __post_init__(self):
         self.factory = CppLanguageElementClassFactory(self.cpp_element.name)
 
@@ -926,7 +933,8 @@ class ClassArrayInitializer(CppDefinition):
             if self.cpp_element.elements:
                 members = [
                     e for e, _v in self.cpp_element.elements if isinstance(e, Variable)]
-            init_values = [member.init_value if member.init_value else DefaultValueFactory().default_value(member) for member in members]
+            init_values = [member.init_value if member.init_value else DefaultValueFactory(
+            ).default_value(member) for member in members]
             init_values = ', '.join(init_values)
             os.write(init_values)
 

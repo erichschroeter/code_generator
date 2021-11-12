@@ -109,9 +109,9 @@ class TestStructDefinition(unittest.TestCase):
             y(3.14) {
             }"""), StructDefinition(
             Struct(name='A')
-                .add(Function(name='A'))
-                .add(Variable(name='x', type='int', init_value='0'))
-                .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
+            .add(Function(name='A'))
+            .add(Variable(name='x', type='int', init_value='0'))
+            .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
 
     def test_two_functions(self):
         def factorial():
@@ -123,8 +123,8 @@ class TestStructDefinition(unittest.TestCase):
             void A::Foo() {
             }"""), StructDefinition(
             Struct(name='A')
-                .add(Function(name='factorial', return_type='int', implementation_handle=factorial).with_arg('int n'))
-                .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
+            .add(Function(name='factorial', return_type='int', implementation_handle=factorial).with_arg('int n'))
+            .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
 
 
 class TestStructArrayInitializer(unittest.TestCase):
