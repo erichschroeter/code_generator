@@ -364,7 +364,7 @@ class CppDefinition(CppCodeGenerator):
         pass
 
 
-def variable_prototype(cpp_element: Variable, use_ref_to_parent=False) -> str:
+def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, with_qualifiers=True) -> str:
     """
     Returns a variable with its qualifiers, type, and name.
     
@@ -373,7 +373,9 @@ def variable_prototype(cpp_element: Variable, use_ref_to_parent=False) -> str:
     const int MyClass::x
     ```
     """
-    qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
+    qualifier = ''
+    if with_qualifiers:
+        qualifier = cpp_element.qualifier() + ' ' if cpp_element.qualifier else ''
     scoped_name = f"{cpp_element.ref_to_parent.name}::{cpp_element.name}" if use_ref_to_parent and cpp_element.ref_to_parent else cpp_element.name
     return f"{qualifier}{cpp_element.type} {scoped_name}"
 
@@ -390,8 +392,8 @@ class VariableDeclaration(CppDeclaration):
     def code(self, indentation=None) -> str:
         if is_const(self.cpp_element.qualifier) or is_constexpr(self.cpp_element.qualifier):
             if self.cpp_element.init_value:
-                return f"{variable_prototype(self.cpp_element, False)} = {self.cpp_element.init_value};"
-            return f"{variable_prototype(self.cpp_element, False)} = {DefaultValueFactory().default_value(self.cpp_element)};"
+                return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {self.cpp_element.init_value};"
+            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=False)} = {DefaultValueFactory().default_value(self.cpp_element)};"
         return f"{variable_prototype(self.cpp_element)};"
 
 
@@ -406,8 +408,8 @@ class VariableDefinition(CppDefinition):
 
     def code(self, indentation=None) -> str:
         if self.cpp_element.init_value:
-            return f"{variable_prototype(self.cpp_element, True)} = {self.cpp_element.init_value};"
-        return f"{variable_prototype(self.cpp_element, True)} = {DefaultValueFactory().default_value(self.cpp_element)};"
+            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True)} = {self.cpp_element.init_value};"
+        return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True)} = {DefaultValueFactory().default_value(self.cpp_element)};"
 
 
 class VariableConstructorDefinition(CppDefinition):
@@ -636,13 +638,19 @@ class ConstructorDefinition(FunctionDefinition):
         """Returns None since constructors don't have a return type."""
         return None
 
+    def is_initializable(self, cpp_element: CppLanguageElement) -> bool:
+        if not isinstance(cpp_element, Variable):
+            return False
+        elif is_static(cpp_element.qualifier):
+            return False
+        elif is_constexpr(cpp_element.qualifier):
+            return False
+        return True
+
     def initializer_list(self, indentation=None) -> List[str]:
         items = None
         if self.cpp_element.ref_to_parent:
-            members = [e for e, _v in self.cpp_element.ref_to_parent.elements if isinstance(e, Variable)]
-            members = [m for m in members if not is_static(m.qualifier)]
-            if members:
-                items = [VariableConstructorDefinition(member).code() for member in members]
+            items = [VariableConstructorDefinition(e).code() for e, _v in self.cpp_element.ref_to_parent.elements if self.is_initializable(e)]
         return items
 
     def code(self, indentation=None) -> str:
@@ -733,8 +741,7 @@ class ArrayDefinition(CppDefinition):
     brace_strategy: Type[BraceStrategy] = KnRStyle
 
     def array_prototype(self, size='') -> str:
-        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
-        return f"{qualifier}{self.cpp_element.type} {self.cpp_element.name}[{size}]"
+        return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, with_qualifiers=False)}[{size}]"
 
     def array_definition(self, output_stream, indentation=None) -> str:
         lines = []
@@ -750,8 +757,7 @@ class ArrayDefinition(CppDefinition):
         style = CodeStyleFactory(self.brace_strategy)
         with style(code, indentation, ';') as os:
             os.write_lines(self.array_definition(os, indentation))
-        code = code.getvalue()
-        return code
+        return code.getvalue()
 
 
 @dataclass
@@ -781,6 +787,8 @@ class CppLanguageElementClassFactory:
     def build_definition(self, element) -> CppDefinition:
         """Returns a CppDeclaration for the given element."""
         if isinstance(element, Variable):
+            if isinstance(element, Array):
+                return ArrayDefinition(element)
             return VariableDefinition(element)
         elif isinstance(element, Function):
             if element.name == self.name:
@@ -850,17 +858,26 @@ class ClassDefinition(CppDefinition):
     def class_scope(self) -> str:
         return f"{self.cpp_element.name}::"
 
+    def is_translation_unit_element(self, cpp_element: CppLanguageElement) -> bool:
+        if isinstance(cpp_element, Variable) and is_static(cpp_element.qualifier):
+            return True
+        elif isinstance(cpp_element, Function):
+            return True
+        return False
+
+    def translation_unit_elements(self) -> List[CppLanguageElement]:
+        return [e for e, _v in self.cpp_element.elements if self.is_translation_unit_element(e)]
+
     def definitions(self, output_stream, indentation=None) -> None:
         if self.cpp_element.elements:
             style = CodeStyleFactory(self.brace_strategy)
-            functions = [
-                e for e, _v in self.cpp_element.elements if isinstance(e, Function)]
             is_first_func = True
-            for function in functions:
+            translation_unit_elements = self.translation_unit_elements()
+            for cpp_element in translation_unit_elements:
                 if not is_first_func:
                     output_stream.write('\n')
                 output_stream.write(
-                    self.factory.build_definition(function).code())
+                    self.factory.build_definition(cpp_element).code())
                 is_first_func = False
 
     def code(self, indentation=None) -> str:

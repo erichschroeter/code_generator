@@ -2,7 +2,7 @@ from enum import Enum
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Enum, Function, KnRStyle, SingleLineStyle, Static, Struct, Variable, Visibility
+from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Const, Constexpr, Enum, Function, KnRStyle, SingleLineStyle, Static, Struct, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -126,6 +126,15 @@ class TestClassDefinition(unittest.TestCase):
         self.assertEqual('', ClassDefinition(
             Class(name='A'), brace_strategy=KnRStyle).code())
 
+    def test_static_array(self):
+        cls = Class(name='A')
+        self.assertEqual(dedent("""\
+            int A::x[] = {
+            \t0,
+            \t1
+            };"""), ClassDefinition(
+            cls.add(Array(name='x', type='int', qualifier=Static(), ref_to_parent=cls).add('0').add('1')), brace_strategy=KnRStyle).code())
+
     def test_one_function(self):
         self.assertEqual(dedent("""\
             void A::Foo() {
@@ -178,11 +187,13 @@ class TestClassDefinition(unittest.TestCase):
                 .add(Variable(name='x', type='int', init_value='0'))
                 .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
 
-    def test_constructor_omits_static_arg(self):
-        self.assertEqual(dedent("""\
-            A::A() {
-            }"""), ClassDefinition(
-            Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1', qualifier=Static())), brace_strategy=KnRStyle).code())
+    def test_omits_static_const_member(self):
+        self.assertEqual('', ClassDefinition(
+            Class(name='A').add(Variable(name='x', type='int', init_value='1', qualifier=Const())), brace_strategy=KnRStyle).code())
+
+    def test_omits_constexpr_member(self):
+        self.assertEqual('', ClassDefinition(
+            Class(name='A').add(Variable(name='x', type='int', init_value='1', qualifier=Constexpr())), brace_strategy=KnRStyle).code())
 
     def test_two_functions(self):
         def factorial():
