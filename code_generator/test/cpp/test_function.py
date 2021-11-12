@@ -67,6 +67,9 @@ class TestFunction(unittest.TestCase):
     def test_raises_error_with_empty_name(self):
         self.assertRaises(ValueError, Function)
 
+    def test_raises_error_args_not_correct_tuple(self):
+        self.assertRaises(ValueError, Function, name='x', args=[''])
+
 
 class TestFunctionDeclaration(unittest.TestCase):
 
@@ -81,6 +84,10 @@ class TestFunctionDeclaration(unittest.TestCase):
     def test_with_one_arg(self):
         self.assertEqual('void a(int x);', FunctionDeclaration(
             Function(name='a').with_arg('int x')).code())
+
+    def test_with_one_arg_default(self):
+        self.assertEqual('void a(int * x = nullptr);', FunctionDeclaration(
+            Function(name='a').with_arg('int * x', 'nullptr')).code())
 
     def test_with_two_args(self):
         self.assertEqual('void a(int x, float y);', FunctionDeclaration(

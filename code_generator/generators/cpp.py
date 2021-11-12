@@ -203,13 +203,27 @@ class Function(CppLanguageElement):
     qualifier: Optional[Qualifier] = None
     postfix_qualifier: Optional[Qualifier] = None
     implementation_handle: Optional[Callable[..., str]] = None
-    args: Optional[List[str]] = None
+    args: Optional[List[Tuple[str,str]]] = None
+    """
+    Optional list of tuple of args with its potential default value.
+    Arg default values are defaulted to `None` if not specified.
+    """
+    
+    def __post_init__(self):
+        super().__post_init__()
+        if not self.args is None:
+            if not isinstance(self.args, List):
+                raise ValueError(f"attribute 'args' must be tuple (str, str)")
+            if len(self.args) > 0 and not isinstance(self.args[0], Tuple):
+                raise ValueError(f"attribute 'args' must be tuple (str, str)")
+            if len(self.args[0]) < 2:
+                raise ValueError(f"attribute 'args' must be tuple (str, str)")
 
-    def with_arg(self, argument) -> 'Function':
+    def with_arg(self, argument, default_value=None) -> 'Function':
         """Appends the argument to the list of function arguments."""
         if not self.args:
             self.args = []
-        self.args.append(argument)
+        self.args.append((argument, default_value))
         return self
 
 
@@ -540,8 +554,12 @@ class FunctionDeclaration(CppDeclaration):
         return_type = self.function_return_type()
         return_type = return_type + ' ' if return_type else ''
         lhs = f"{qualifier}{return_type}{self.cpp_element.name}"
-        args = ', '.join(
-            self.cpp_element.args) if self.cpp_element.args else ''
+        args = []
+        if self.cpp_element.args:
+            for (arg, default_value) in self.cpp_element.args:
+                assignment = f" = {default_value}" if default_value else ''
+                args.append(f"{arg}{assignment}")
+        args = ', '.join(args) if args else ''
         postfix_qualifier = ' ' + \
             self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
         return f"{lhs}({args}){postfix_qualifier};"
@@ -569,8 +587,8 @@ class FunctionDefinition(CppDefinition):
             '::' if self.cpp_element.ref_to_parent else ''
         return_type = self.function_return_type()
         lhs = f"{return_type + ' ' if return_type else ''}{scope}{self.cpp_element.name}"
-        args = ', '.join(
-            self.cpp_element.args) if self.cpp_element.args else ''
+        args = [arg for (arg, _default_value) in self.cpp_element.args if self.cpp_element.args] if self.cpp_element.args else []
+        args = ', '.join(args) if args else ''
         postfix_qualifier = ' ' + \
             self.cpp_element.postfix_qualifier() if self.cpp_element.postfix_qualifier else ''
         return f"{lhs}({args}){postfix_qualifier}"

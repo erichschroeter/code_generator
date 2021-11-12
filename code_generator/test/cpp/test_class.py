@@ -175,7 +175,7 @@ class TestClassDefinition(unittest.TestCase):
             void A::Foo() {
             }"""), ClassDefinition(
             Class(name='A')
-                .add(Function(name='factorial', return_type='int', args=['int n'], implementation_handle=factorial))
+                .add(Function(name='factorial', return_type='int', implementation_handle=factorial).with_arg('int n'))
                 .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
 
 
