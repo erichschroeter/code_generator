@@ -898,6 +898,8 @@ class ClassDefinition(CppDefinition):
 
     def is_translation_unit_element(self, cpp_element: CppLanguageElement) -> bool:
         if isinstance(cpp_element, Variable) and is_static(cpp_element.qualifier):
+            if is_constexpr(cpp_element.qualifier):
+                return False
             if is_const(cpp_element.qualifier) and is_integral(cpp_element.type):
                 return False
             return True

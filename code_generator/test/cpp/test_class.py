@@ -267,6 +267,10 @@ class TestClassDefinition(unittest.TestCase):
         self.assertEqual('', ClassDefinition(
             Class(name='A').add(Variable(name='x', type='int', init_value='1', qualifier=Constexpr())), brace_strategy=KnRStyle).code())
 
+    def test_omits_static_constexpr_member(self):
+        self.assertEqual('', ClassDefinition(
+            Class(name='A').add(Variable(name='x', type='int', init_value='1', qualifier=Static(Constexpr()))), brace_strategy=KnRStyle).code())
+
     def test_two_functions(self):
         def factorial():
             return 'return n < 1 ? 1 : (n * factorial(n - 1));'
