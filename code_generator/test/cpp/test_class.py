@@ -123,12 +123,19 @@ class TestClassDeclaration(unittest.TestCase):
             };"""), ClassDeclaration(
             Class(name='A').add(Enum(name='Color').add('RED'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
 
-    def test_array(self):
+    def test_cpp03_array(self):
         self.assertEqual(dedent("""\
             class A {
             \tint x[0];
             };"""), ClassDeclaration(
-            Class(name='A').add(Array(name='x', type='int'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle).code())
+            Class(name='A').add(Array(name='x', type='int'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle, cpp_standard=CppStandard.CPP_03).code())
+
+    def test_cpp11_std_array(self):
+        self.assertEqual(dedent("""\
+            class A {
+            \tstd::array<int, 0> x;
+            };"""), ClassDeclaration(
+            Class(name='A').add(Array(name='x', type='int'), visibility=Visibility.PRIVATE), brace_strategy=KnRStyle, cpp_standard=CppStandard.CPP_11).code())
 
     def test_alternating_visibility_elements(self):
         self.assertEqual(dedent("""\

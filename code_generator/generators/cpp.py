@@ -804,6 +804,25 @@ class ArrayDeclaration(VariableDeclaration):
 
 
 @dataclass
+class StdArrayDeclaration(VariableDeclaration):
+    """
+    Generates a standard library array declaration.
+    If `size_ref` is not `None` then the name will be used to declare the array size.
+
+    ```
+    std::array<int, 0> my_array;
+    std::array<int, COUNT> my_array;
+    ```
+    """
+
+    def code(self, indentation=None) -> str:
+        qualifier = self.cpp_element.qualifier() + ' ' if self.cpp_element.qualifier else ''
+        size = self.cpp_element.size_ref.name if self.cpp_element.size_ref else len(
+            self.cpp_element.items) if self.cpp_element.items else 0
+        return f"{qualifier}std::array<{self.cpp_element.type}, {size}> {self.cpp_element.name};"
+
+
+@dataclass
 class ArrayDefinition(CppDefinition):
     """
     Generates an array definition.
@@ -866,7 +885,7 @@ class ArrayConstructorDefinition(ArrayDefinition):
 
 
 @dataclass
-class CppLanguageElementClassFactory:
+class ClassCodeFactory:
     """Factory for creating declaration and definition instances."""
 
     name: str
@@ -876,18 +895,18 @@ class CppLanguageElementClassFactory:
         """Returns a CppDeclaration for the given element."""
         if isinstance(element, Variable):
             if isinstance(element, Array):
-                return ArrayDeclaration(element)
-            return VariableDeclaration(element)
+                return ArrayDeclaration(element, self.cpp_standard) if self.cpp_standard < CppStandard.CPP_11 else StdArrayDeclaration(element, self.cpp_standard)
+            return VariableDeclaration(element, self.cpp_standard)
         elif isinstance(element, Function):
             if element.name == self.name:
-                return ConstructorDeclaration(element)
-            return FunctionDeclaration(element)
+                return ConstructorDeclaration(element, self.cpp_standard)
+            return FunctionDeclaration(element, self.cpp_standard)
         elif isinstance(element, Class):
             if isinstance(element, Struct):
-                return StructDeclaration(element)
-            return ClassDeclaration(element)
+                return StructDeclaration(element, self.cpp_standard)
+            return ClassDeclaration(element, self.cpp_standard)
         elif isinstance(element, Enum):
-            return EnumDeclaration(element)
+            return EnumDeclaration(element, self.cpp_standard)
         raise ValueError(f"Unsupported declaration for element '{element}'")
 
     def build_definition(self, element) -> CppDefinition:
@@ -912,10 +931,10 @@ class ClassDeclaration(CppDeclaration):
 
     brace_strategy: BraceStrategy = KnRStyle
     visibility: Visibility = Visibility.PRIVATE
-    element_factory: CppLanguageElementClassFactory = field(init=False)
+    element_factory: ClassCodeFactory = field(init=False)
 
     def __post_init__(self):
-        self.element_factory = CppLanguageElementClassFactory(name=self.cpp_element.name, cpp_standard=self.cpp_standard)
+        self.element_factory = ClassCodeFactory(name=self.cpp_element.name, cpp_standard=self.cpp_standard)
 
     def class_prototype(self) -> str:
         return f"class {self.cpp_element.name}"
@@ -956,10 +975,10 @@ class ClassDeclaration(CppDeclaration):
 class ClassDefinition(CppDefinition):
 
     brace_strategy: BraceStrategy = KnRStyle
-    element_factory: CppLanguageElementClassFactory = field(init=False)
+    element_factory: ClassCodeFactory = field(init=False)
 
     def __post_init__(self):
-        self.element_factory = CppLanguageElementClassFactory(name=self.cpp_element.name, cpp_standard=self.cpp_standard)
+        self.element_factory = ClassCodeFactory(name=self.cpp_element.name, cpp_standard=self.cpp_standard)
 
     def class_scope(self) -> str:
         return f"{self.cpp_element.name}::"
