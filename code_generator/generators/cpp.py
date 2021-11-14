@@ -7,6 +7,30 @@ from typing import Callable, List, Optional, Tuple, Type
 from .docs import Docs
 
 
+class CppStandard(PythonEnum):
+    CPP_03 = (0, 'C++03')
+    CPP_11 = (1, 'C++11')
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value[0] < other.value[0]
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value[0] > other.value[0]
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value[0] <= other.value[0]
+        return NotImplemented
+
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value[0] >= other.value[0]
+        return NotImplemented
+
 @dataclass
 class Qualifier:
     """Represents a C++ qualifier keyword, and follows the decorator pattern to allow chaining."""
@@ -324,6 +348,7 @@ class CppCodeGenerator(ABC):
 
     cpp_element: CppLanguageElement
     docs_generator: Type[CppDocs] = VerbatimAboveDocs
+    cpp_standard: CppStandard = CppStandard.CPP_11
 
     @abstractmethod
     def code(self, indentation=None) -> str:
@@ -658,6 +683,17 @@ class ConstructorDeclaration(FunctionDeclaration):
 
 
 @dataclass
+class ConstructorInitializerFactory:
+
+    cpp_standard: CppStandard
+
+    def build(self, cpp_element: CppLanguageElement) -> CppDefinition:
+        if isinstance(cpp_element, Array):
+            return ArrayConstructorDefinition(cpp_element, cpp_standard=self.cpp_standard)
+        return VariableConstructorDefinition(cpp_element, cpp_standard=self.cpp_standard)
+
+
+@dataclass
 class ConstructorDefinition(FunctionDefinition):
     """
     Generates a constructor definition.
@@ -669,6 +705,11 @@ class ConstructorDefinition(FunctionDefinition):
     }
     ```
     """
+
+    initializer_factory: ConstructorInitializerFactory = field(init=False)
+    
+    def __post_init__(self):
+        self.initializer_factory = ConstructorInitializerFactory(self.cpp_standard)
 
     def function_return_type(self) -> str:
         """Returns None since constructors don't have a return type."""
@@ -686,7 +727,7 @@ class ConstructorDefinition(FunctionDefinition):
     def initializer_list(self, indentation=None) -> List[str]:
         items = None
         if self.cpp_element.ref_to_parent:
-            items = [VariableConstructorDefinition(e).code(
+            items = [self.initializer_factory.build(e).code(
             ) for e, _v in self.cpp_element.ref_to_parent.elements if self.is_initializable(e)]
         return items
 
@@ -781,12 +822,12 @@ class ArrayDefinition(CppDefinition):
     def array_prototype(self, size='') -> str:
         return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])}[{size}]"
 
-    def array_definition(self, output_stream, indentation=None) -> str:
+    def array_values(self, indentation=None) -> List[str]:
         lines = []
         if self.cpp_element.items:
             for item in self.cpp_element.items:
                 lines.append(f"{item}")
-        return ',\n'.join(lines)
+        return lines
 
     def code(self, indentation=None) -> str:
         code = StringIO()
@@ -794,7 +835,33 @@ class ArrayDefinition(CppDefinition):
         code.write(' =')
         style = CodeStyleFactory(self.brace_strategy)
         with style(code, indentation, ';') as os:
-            os.write_lines(self.array_definition(os, indentation))
+            init_value = self.cpp_element.init_value
+            if not init_value:
+                init_value = ',\n'.join(self.array_values(indentation))
+            os.write_lines(init_value)
+        return code.getvalue()
+
+
+@dataclass
+class ArrayConstructorDefinition(ArrayDefinition):
+
+    brace_strategy: Type[BraceStrategy] = SingleLineStyle
+
+    def array_prototype(self, size='') -> str:
+        return self.cpp_element.name
+
+    def code(self, indentation=None) -> str:
+        code = StringIO()
+        code.write(self.array_prototype())
+        style = CodeStyleFactory(self.brace_strategy)
+        if self.cpp_standard >= CppStandard.CPP_11:
+            with style(code, indentation) as os:
+                init_value = self.cpp_element.init_value
+                if not init_value:
+                    init_value = ','.join(self.array_values(indentation))
+                os.write(init_value)
+        else:
+            code.write('()')
         return code.getvalue()
 
 
@@ -803,6 +870,7 @@ class CppLanguageElementClassFactory:
     """Factory for creating declaration and definition instances."""
 
     name: str
+    cpp_standard: CppStandard
 
     def build_declaration(self, element) -> CppDeclaration:
         """Returns a CppDeclaration for the given element."""
@@ -826,16 +894,16 @@ class CppLanguageElementClassFactory:
         """Returns a CppDeclaration for the given element."""
         if isinstance(element, Variable):
             if isinstance(element, Array):
-                return ArrayDefinition(element)
-            return VariableDefinition(element)
+                return ArrayDefinition(element, cpp_standard=self.cpp_standard)
+            return VariableDefinition(element, cpp_standard=self.cpp_standard)
         elif isinstance(element, Function):
             if element.name == self.name:
-                return ConstructorDefinition(element)
-            return FunctionDefinition(element)
+                return ConstructorDefinition(element, cpp_standard=self.cpp_standard)
+            return FunctionDefinition(element, cpp_standard=self.cpp_standard)
         elif isinstance(element, Class):
             if isinstance(element, Struct):
-                return StructDefinition(element)
-            return ClassDefinition(element)
+                return StructDefinition(element, cpp_standard=self.cpp_standard)
+            return ClassDefinition(element, cpp_standard=self.cpp_standard)
         raise ValueError(f"Unsupported definition for element '{element}'")
 
 
@@ -847,7 +915,7 @@ class ClassDeclaration(CppDeclaration):
     element_factory: CppLanguageElementClassFactory = field(init=False)
 
     def __post_init__(self):
-        self.element_factory = CppLanguageElementClassFactory(self.cpp_element.name)
+        self.element_factory = CppLanguageElementClassFactory(name=self.cpp_element.name, cpp_standard=self.cpp_standard)
 
     def class_prototype(self) -> str:
         return f"class {self.cpp_element.name}"
@@ -891,7 +959,7 @@ class ClassDefinition(CppDefinition):
     element_factory: CppLanguageElementClassFactory = field(init=False)
 
     def __post_init__(self):
-        self.element_factory = CppLanguageElementClassFactory(self.cpp_element.name)
+        self.element_factory = CppLanguageElementClassFactory(name=self.cpp_element.name, cpp_standard=self.cpp_standard)
 
     def class_scope(self) -> str:
         return f"{self.cpp_element.name}::"

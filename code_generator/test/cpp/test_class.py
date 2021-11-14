@@ -2,7 +2,7 @@ from enum import Enum
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Const, Constexpr, Enum, Function, KnRStyle, SingleLineStyle, Static, Struct, Variable, Visibility
+from code_generator.generators.cpp import Array, Class, ClassArrayInitializer, ClassDeclaration, ClassDefinition, Const, Constexpr, CppStandard, Enum, Function, KnRStyle, SingleLineStyle, Static, Struct, Variable, Visibility
 
 
 class TestClass(unittest.TestCase):
@@ -216,10 +216,17 @@ class TestClassDefinition(unittest.TestCase):
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='A')).add(Variable(name='x', type='int', init_value='1', qualifier=Const())), brace_strategy=KnRStyle).code())
 
-    def test_constructor_with_array_member(self):
+    def test_constructor_with_cpp03_array_member(self):
         self.assertEqual(dedent("""\
             A::A() :
-            x(1, 2) {
+            x() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Function(name='A')).add(Array(name='x', type='int', init_value='1, 2')), brace_strategy=KnRStyle, cpp_standard=CppStandard.CPP_03).code())
+
+    def test_constructor_with_cpp11_array_member(self):
+        self.assertEqual(dedent("""\
+            A::A() :
+            x{1, 2} {
             }"""), ClassDefinition(
             Class(name='A').add(Function(name='A')).add(Array(name='x', type='int', init_value='1, 2')), brace_strategy=KnRStyle).code())
 
