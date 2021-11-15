@@ -248,6 +248,20 @@ class TestClassDefinition(unittest.TestCase):
             .add(Variable(name='x', type='int', init_value='0'))
             .add(Variable(name='y', type='float', init_value='3.14')), brace_strategy=KnRStyle).code())
 
+    def test_internal_class_function(self):
+        self.assertEqual(dedent("""\
+            void A::B::do_something() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Class(name='B').add(Function(name='do_something')), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
+    def test_constructor_and_internal_class_function(self):
+        self.assertEqual(dedent("""\
+            void A::B::do_something() {
+            }
+            A::A() {
+            }"""), ClassDefinition(
+            Class(name='A').add(Class(name='B').add(Function(name='do_something')), visibility=Visibility.PUBLIC).add(Function(name='A')), brace_strategy=KnRStyle).code())
+
     def test_static_member(self):
         cls = Class(name='A')
         self.assertEqual(dedent("""\

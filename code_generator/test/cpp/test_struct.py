@@ -126,6 +126,12 @@ class TestStructDefinition(unittest.TestCase):
             .add(Function(name='factorial', return_type='int', implementation_handle=factorial).with_arg('int n'))
             .add(Function(name='Foo')), brace_strategy=KnRStyle).code())
 
+    def test_internal_struct_function(self):
+        self.assertEqual(dedent("""\
+            void A::B::do_something() {
+            }"""), StructDefinition(
+            Struct(name='A').add(Struct(name='B').add(Function(name='do_something')), visibility=Visibility.PUBLIC), brace_strategy=KnRStyle).code())
+
 
 class TestStructArrayInitializer(unittest.TestCase):
 

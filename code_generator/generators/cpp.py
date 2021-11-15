@@ -407,6 +407,18 @@ def reduce_qualifiers(qualifier: Qualifier, exclude: List[Type[Qualifier]]) -> Q
     return qualifier
 
 
+def build_scope(cpp_element: CppLanguageElement) -> str:
+    """Recursively travels up the ref_to_parent to generate the scope."""
+    if not cpp_element.ref_to_parent:
+        return ''
+    scope = cpp_element.ref_to_parent.name + '::'
+    parent_scope = build_scope(cpp_element.ref_to_parent)
+    if parent_scope:
+        return parent_scope + scope
+    else:
+        return scope
+
+
 def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: List[Type[Qualifier]] = None) -> str:
     """
     Returns a variable with its qualifiers, type, and name.
@@ -422,7 +434,7 @@ def variable_prototype(cpp_element: Variable, use_ref_to_parent=False, exclude: 
         qualifier_copy = deepcopy(cpp_element.qualifier)
         qualifier = reduce_qualifiers(qualifier_copy, exclude)
     qualifier = qualifier() + ' ' if qualifier else ''
-    scoped_name = f"{cpp_element.ref_to_parent.name}::{cpp_element.name}" if use_ref_to_parent and cpp_element.ref_to_parent else cpp_element.name
+    scoped_name = f"{build_scope(cpp_element)}{cpp_element.name}" if use_ref_to_parent and cpp_element.ref_to_parent else cpp_element.name
     return f"{qualifier}{cpp_element.type} {scoped_name}"
 
 
@@ -649,8 +661,7 @@ class FunctionDefinition(CppDefinition):
         return self.cpp_element.return_type if self.cpp_element.return_type else 'void'
 
     def function_prototype(self) -> str:
-        scope = self.cpp_element.ref_to_parent.name + \
-            '::' if self.cpp_element.ref_to_parent else ''
+        scope = build_scope(self.cpp_element)
         return_type = self.function_return_type()
         lhs = f"{return_type + ' ' if return_type else ''}{scope}{self.cpp_element.name}"
         args = [arg for (arg, _default_value)
@@ -971,6 +982,28 @@ class ClassDeclaration(CppDeclaration):
         return code
 
 
+def is_translation_unit_element(cpp_element: CppLanguageElement) -> bool:
+    if isinstance(cpp_element, Variable) and is_static(cpp_element.qualifier):
+        if is_constexpr(cpp_element.qualifier):
+            return False
+        if is_const(cpp_element.qualifier) and is_integral(cpp_element.type):
+            return False
+        return True
+    elif isinstance(cpp_element, Function):
+        return True
+    return False
+
+
+def translation_unit_elements(cls: Class) -> List[CppLanguageElement]:
+    """Recursivley aggregates all translation units in the given class."""
+    units = []
+    for e, _v in cls.elements:
+        if isinstance(e, Class):
+            units.extend(translation_unit_elements(e))
+    units.extend([e for e, _v in cls.elements if is_translation_unit_element(e)])
+    return units
+
+
 @dataclass
 class ClassDefinition(CppDefinition):
 
@@ -983,19 +1016,8 @@ class ClassDefinition(CppDefinition):
     def class_scope(self) -> str:
         return f"{self.cpp_element.name}::"
 
-    def is_translation_unit_element(self, cpp_element: CppLanguageElement) -> bool:
-        if isinstance(cpp_element, Variable) and is_static(cpp_element.qualifier):
-            if is_constexpr(cpp_element.qualifier):
-                return False
-            if is_const(cpp_element.qualifier) and is_integral(cpp_element.type):
-                return False
-            return True
-        elif isinstance(cpp_element, Function):
-            return True
-        return False
-
     def translation_unit_elements(self) -> List[CppLanguageElement]:
-        return [e for e, _v in self.cpp_element.elements if self.is_translation_unit_element(e)]
+        return translation_unit_elements(self.cpp_element)
 
     def definitions(self, output_stream, indentation=None) -> None:
         if self.cpp_element.elements:
