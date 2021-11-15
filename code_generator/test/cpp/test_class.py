@@ -291,9 +291,9 @@ class TestClassDefinition(unittest.TestCase):
             .add(Variable(name='x', type='int', init_value='1', qualifier=Static(Const()), ref_to_parent=cls))
             .add(Function(name='A')), brace_strategy=KnRStyle).code())
 
-    def test_omits_constexpr_member(self):
-        self.assertEqual('', ClassDefinition(
-            Class(name='A').add(Variable(name='x', type='int', init_value='1', qualifier=Constexpr())), brace_strategy=KnRStyle).code())
+    def test_static_constexpr_non_integral_member(self):
+        self.assertEqual('constexpr Object A::x;', ClassDefinition(
+            Class(name='A').add(Variable(name='x', type='Object', init_value='{"", ""}', qualifier=Static(Constexpr()))), brace_strategy=KnRStyle).code())
 
     def test_omits_static_constexpr_member(self):
         self.assertEqual('', ClassDefinition(

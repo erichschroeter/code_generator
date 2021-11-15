@@ -205,6 +205,7 @@ class Variable(CppLanguageElement):
 def is_integral(type: str) -> bool:
     return type in ['int', 'long', 'size_t']
 
+
 class DefaultValueFactory:
     """Factory class to support getting default values for known C++ types."""
 
@@ -482,10 +483,9 @@ class VariableDefinition(CppDefinition):
     ```
     """
 
-    def is_class_member(self, cpp_element: CppLanguageElement) -> bool:
-        return isinstance(cpp_element.ref_to_parent, Class) and is_static(cpp_element.qualifier)
-
     def code(self, indentation=None) -> str:
+        if is_constexpr(self.cpp_element.qualifier):
+            return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])};"
         if self.cpp_element.init_value:
             return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])} = {self.cpp_element.init_value};"
         return f"{variable_prototype(self.cpp_element, use_ref_to_parent=True, exclude=[Static])} = {DefaultValueFactory().default_value(self.cpp_element)};"
@@ -1003,7 +1003,7 @@ class ClassDeclaration(CppDeclaration):
 
 def is_translation_unit_element(cpp_element: CppLanguageElement) -> bool:
     if isinstance(cpp_element, Variable) and is_static(cpp_element.qualifier):
-        if is_constexpr(cpp_element.qualifier):
+        if is_constexpr(cpp_element.qualifier) and is_integral(cpp_element.type):
             return False
         if is_const(cpp_element.qualifier) and is_integral(cpp_element.type):
             return False
