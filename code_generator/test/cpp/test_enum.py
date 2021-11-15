@@ -54,3 +54,21 @@ class TestEnumDeclaration(unittest.TestCase):
             \tBLUE = 1
             };"""), EnumDeclaration(
             Enum(name='Color').add('RED', 0).add('BLUE', 1), brace_strategy=KnRStyle).code())
+
+    def test_one_element_with_docs(self):
+        self.assertEqual(dedent("""\
+            enum Color {
+            \t/// The color red.
+            \tRED = 0
+            };"""), EnumDeclaration(
+            Enum(name='Color').add('RED', 0, docs='/// The color red.'), brace_strategy=KnRStyle).code_with_docs())
+
+    def test_two_element_with_docs(self):
+        self.assertEqual(dedent("""\
+            enum Color {
+            \t/// The color red.
+            \tRED,
+            \t/// The color blue.
+            \tBLUE
+            };"""), EnumDeclaration(
+            Enum(name='Color').add('RED', docs='/// The color red.').add('BLUE', docs='/// The color blue.'), brace_strategy=KnRStyle).code_with_docs())

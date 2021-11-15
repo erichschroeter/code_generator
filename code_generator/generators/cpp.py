@@ -261,19 +261,27 @@ class Function(CppLanguageElement):
 
 
 @dataclass
+class EnumValue(CppLanguageElement):
+    """Container for data associated with an enum value."""
+
+    value: Optional[str] = None
+    docs: Optional[str] = None
+
+
+@dataclass
 class Enum(CppLanguageElement):
     """The Python class that generates string representation for C++ enum."""
 
     prefix: str = ''
-    items: Optional[List[Tuple[str, str]]] = None
+    items: Optional[List[EnumValue]] = None
 
-    def add(self, item: str, value: str = None) -> 'Enum':
+    def add(self, item: str, value: str = None, docs: str = None) -> 'Enum':
         """
         Appends the item to the list of enum items.
         """
         if not self.items:
             self.items = []
-        self.items.append((item, value))
+        self.items.append(EnumValue(name=item, value=value, docs=docs))
         return self
 
 
@@ -771,6 +779,8 @@ class EnumDeclaration(CppDeclaration):
     """
 
     brace_strategy: Type[BraceStrategy] = KnRStyle
+    include_item_docs: bool = False
+    """Write respective docs for each enum value."""
 
     def enum_prototype(self) -> str:
         return f"enum {self.cpp_element.name}"
@@ -778,9 +788,11 @@ class EnumDeclaration(CppDeclaration):
     def enum_definition(self, output_stream, indentation=None) -> str:
         lines = []
         if self.cpp_element.items:
-            for name, value in self.cpp_element.items:
-                name = name if not self.cpp_element.prefix else f"{self.cpp_element.prefix}{name}"
-                value = f" = {value}" if value is not None else ''
+            for item in self.cpp_element.items:
+                name = item.name if not self.cpp_element.prefix else f"{self.cpp_element.prefix}{item.name}"
+                if self.include_item_docs and item.docs:
+                    name = f"{item.docs}\n{name}"
+                value = f" = {item.value}" if item.value is not None else ''
                 lines.append(f"{name}{value}")
         return ',\n'.join(lines)
 
@@ -792,6 +804,13 @@ class EnumDeclaration(CppDeclaration):
             os.write_lines(self.enum_definition(os, indentation))
         code = code.getvalue()
         return code
+
+    def code_with_docs(self, indentation=None) -> str:
+        restore = self.include_item_docs # Store so it can be restored before returning
+        self.include_item_docs = True
+        docs_with_code = DocsFactory(self.docs_generator)(self.cpp_element).docs(self.code())
+        self.include_item_docs = restore
+        return docs_with_code
 
 
 @dataclass
