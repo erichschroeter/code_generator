@@ -158,5 +158,8 @@ python -m unittest
 or, using [pytest]{https://docs.pytest.org/en/6.2.x/}:
 
 ```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-dev.txt
 python -m pytest
 ```
