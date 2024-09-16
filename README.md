@@ -1,4 +1,21 @@
-# C++ Code Generator
+# Code Generator
+
+- [Code Generator](#code-generator)
+  - [Usage examples](#usage-examples)
+    - [Generate C++ code from Python code](#generate-c-code-from-python-code)
+      - [Python code](#python-code)
+      - [Generated C++ code](#generated-c-code)
+      - [Creating functions](#creating-functions)
+        - [Python code](#python-code-1)
+        - [Generated C++ code](#generated-c-code-1)
+      - [Creating classes and structures](#creating-classes-and-structures)
+        - [Python code](#python-code-2)
+        - [Generated C++ code](#generated-c-code-2)
+      - [Rendering `CppClass` objects to C++ declaration and implementation](#rendering-cppclass-objects-to-c-declaration-and-implementation)
+        - [Python code](#python-code-3)
+        - [Generated C++ declaration](#generated-c-declaration)
+      - [Generated C++ implementation](#generated-c-implementation)
+  - [Maintainers](#maintainers)
 
 Simple and straightforward code generator for creating C++ code.
 It also could be used for generating code in any programming language.
@@ -15,26 +32,35 @@ However, this solution has been both simplified and extended compared to the ini
 
 ### Generate C++ code from Python code
 
-#### Creating variables
-
-##### Python code
+#### Python code
 ```python
-cpp = CodeFile('example.cpp')
-cpp('int i = 0;')
+var_count = Variable(name='count', type='int', initialilization_value=0)
+var_pi = Variable(name='pi', type='float', initialization_value=3.14)
+var_title = Variable(name='title', type='const char *', initialization_value='Title:')
 
-x_variable = CppVariable(name='x', type='int const&', is_static=True, is_constexpr=True, initialization_value='42')
-x_variable.render_to_string(cpp)
+var_name = Variable(name='name', type='std::string', initialization_value='John Doe')
+fn_getname = Function(name='GetName', ret_type='std::string', is_const=True)
+fn_setname = Function(name='SetName', args='std::string & name')
 
-name_variable = CppVariable(name='name', type='char*', is_extern=True)
-name_variable.render_to_string(cpp)
+cls_person = Class(name='Person', type='Person')
+cls_person.add_member(var_name)
+cls_person.add_method(fn_getname)
+cls_person.add_method(fn_setname)
+
+header = DeclarationFile('Person.h')
+source = DefinitionFile('Person.cpp')
+
+// TODO
 ```
 
-##### Generated C++ code
+#### Generated C++ code
 ```c++
 int i = 0;
 static constexpr int const& x = 42;
 extern char* name;
 ```
+
+[top](#code-generator)
 
 #### Creating functions
 
@@ -63,6 +89,8 @@ constexpr int factorial(int n)
 }
 ```
 
+[top](#code-generator)
+
 #### Creating classes and structures
 
 ##### Python code
@@ -83,6 +111,8 @@ public:
     double m_classMember2;
 };
 ```
+
+[top](#code-generator)
 
 #### Rendering `CppClass` objects to C++ declaration and implementation
 
@@ -146,20 +176,10 @@ cpp.append(', p = NULL);')
 cpp.newline(2)
 ```
 
+[top](#code-generator)
+
 ## Maintainers
 
-### Executing unit tests
-The following command will execute the unit tests.
+See [DEVELOPERS.md](./DEVELOPERS.md)
 
-```bash
-python -m unittest
-```
-
-or, using [pytest]{https://docs.pytest.org/en/6.2.x/}:
-
-```bash
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements-dev.txt
-python -m pytest
-```
+[top](#code-generator)
