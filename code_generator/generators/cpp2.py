@@ -40,3 +40,21 @@ class Variable:
     def declaration_str(self):
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
         return f'{qualifiers}{self.type} {self.name}'
+
+
+class Function:
+    def __init__(self, name, type='void', qualifiers=None) -> None:
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
+            raise CppIdentifierError(name)
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(type):
+            raise CppTypeError(type)
+        self.name = name
+        self.type = type
+        self.qualifiers = qualifiers
+
+    def __str__(self) -> str:
+        return self.name
+
+    def declaration_str(self):
+        qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
+        return f'{qualifiers}{self.type} {self.name}()'
