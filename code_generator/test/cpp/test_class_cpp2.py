@@ -16,28 +16,28 @@ class TestClass(unittest.TestCase):
         self.assertTrue(Class('x'))
 
     def test_name_X(self):
-        self.assertTrue(Class, 'X')
+        self.assertTrue(Class('X'))
 
     def test_name_aA(self):
-        self.assertTrue(Class, 'aA')
+        self.assertTrue(Class('aA'))
 
     def test_name_aAunderscore(self):
-        self.assertTrue(Class, 'aA_')
+        self.assertTrue(Class('aA_'))
 
     def test_name_aAunderscore0(self):
-        self.assertTrue(Class, 'aA_0')
+        self.assertTrue(Class('aA_0'))
 
     def test_name_aA0underscore(self):
-        self.assertTrue(Class, 'aA0_')
+        self.assertTrue(Class('aA0_'))
 
     def test_name_Aa(self):
-        self.assertTrue(Class, 'Aa')
+        self.assertTrue(Class('Aa'))
 
     def test_name_underscore(self):
-        self.assertTrue(Class, '_')
+        self.assertTrue(Class('_'))
 
     def test_name_underscore0(self):
-        self.assertTrue(Class, '_0')
+        self.assertTrue(Class('_0'))
 
     def test_decl_with_default_type(self):
         self.assertEqual(dedent('''\

@@ -16,28 +16,28 @@ class TestFunction(unittest.TestCase):
         self.assertTrue(Function('x'))
 
     def test_name_X(self):
-        self.assertTrue(Function, 'X')
+        self.assertTrue(Function('X'))
 
     def test_name_aA(self):
-        self.assertTrue(Function, 'aA')
+        self.assertTrue(Function('aA'))
 
     def test_name_aAunderscore(self):
-        self.assertTrue(Function, 'aA_')
+        self.assertTrue(Function('aA_'))
 
     def test_name_aAunderscore0(self):
-        self.assertTrue(Function, 'aA_0')
+        self.assertTrue(Function('aA_0'))
 
     def test_name_aA0underscore(self):
-        self.assertTrue(Function, 'aA0_')
+        self.assertTrue(Function('aA0_'))
 
     def test_name_Aa(self):
-        self.assertTrue(Function, 'Aa')
+        self.assertTrue(Function('Aa'))
 
     def test_name_underscore(self):
-        self.assertTrue(Function, '_')
+        self.assertTrue(Function('_'))
 
     def test_name_underscore0(self):
-        self.assertTrue(Function, '_0')
+        self.assertTrue(Function('_0'))
 
     def test_decl_with_default_type(self):
         self.assertEqual(Function('x').decl_str(), 'void x()')

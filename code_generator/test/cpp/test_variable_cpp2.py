@@ -16,28 +16,28 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(Variable('x'))
 
     def test_name_X(self):
-        self.assertTrue(Variable, 'X')
+        self.assertTrue(Variable('X'))
 
     def test_name_aA(self):
-        self.assertTrue(Variable, 'aA')
+        self.assertTrue(Variable('aA'))
 
     def test_name_aAunderscore(self):
-        self.assertTrue(Variable, 'aA_')
+        self.assertTrue(Variable('aA_'))
 
     def test_name_aAunderscore0(self):
-        self.assertTrue(Variable, 'aA_0')
+        self.assertTrue(Variable('aA_0'))
 
     def test_name_aA0underscore(self):
-        self.assertTrue(Variable, 'aA0_')
+        self.assertTrue(Variable('aA0_'))
 
     def test_name_Aa(self):
-        self.assertTrue(Variable, 'Aa')
+        self.assertTrue(Variable('Aa'))
 
     def test_name_underscore(self):
-        self.assertTrue(Variable, '_')
+        self.assertTrue(Variable('_'))
 
     def test_name_underscore0(self):
-        self.assertTrue(Variable, '_0')
+        self.assertTrue(Variable('_0'))
 
     def test_decl_with_default_type(self):
         self.assertEqual(Variable('x').decl_str(), 'void x')
