@@ -65,3 +65,6 @@ class TestFunction(unittest.TestCase):
 
     def test_decl_with_one_arg_as_Variable(self):
         self.assertEqual(Function('x').arg(Variable('x')).decl_str(), 'void x(void x)')
+
+    def test_decl_with_two_arg_as_Variable(self):
+        self.assertEqual(Function('x').arg(Variable('x')).arg(Variable('y', type='int')).decl_str(), 'void x(void x, int y)')

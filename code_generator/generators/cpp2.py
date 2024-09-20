@@ -1,5 +1,8 @@
 
 import re
+from textwrap import dedent
+
+from jinja2 import Template
 
 
 CPP_IDENTIFIER_REGEX = r'^[a-zA-Z_]+[a-zA-Z0-9_]*$'
@@ -42,6 +45,10 @@ class Variable:
         return f'{qualifiers}{self.type} {self.name}'
 
 
+def is_variable(obj):
+    return isinstance(obj, Variable)
+
+
 class Function:
     def __init__(self, name, type='void', qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
@@ -73,3 +80,83 @@ class Function:
         """
         self.args.append(arg)
         return self
+
+
+def is_function(obj):
+    return isinstance(obj, Function)
+
+
+class Class:
+    def __init__(self, name) -> None:
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
+            raise CppIdentifierError(name)
+        self.name = name
+        self.type = 'class'
+        self.members_public = []
+        self.members_protected = []
+        self.members_private = []
+        self.decl_template = dedent('''\
+        {{type}} {{name}}
+        {
+        {%- if public_members %}
+        public:
+            {%- for member in public_members %}
+            {%- if member is variable or member is function %}
+            {{member.decl_str()}};
+            {%- else %}
+            {{member}}
+            {%- endif -%}
+            {%- endfor -%}
+        {% endif %}
+        {%- if protected_members %}
+        protected:
+            {%- for member in protected_members %}
+            {%- if member is variable or member is function %}
+            {{member.decl_str()}};
+            {%- else %}
+            {{member}}
+            {%- endif -%}
+            {%- endfor -%}
+        {% endif %}
+        {%- if private_members %}
+        private:
+            {%- for member in private_members %}
+            {%- if member is variable or member is function %}
+            {{member.decl_str()}};
+            {%- else %}
+            {{member}}
+            {%- endif -%}
+            {%- endfor -%}
+        {% endif %}
+        }''')
+
+    def __str__(self) -> str:
+        return self.name
+
+    def decl_str(self):
+        fields = {
+            'type': self.type,
+            'name': self.name,
+            'public_members': self.members_public,
+            'protected_members': self.members_protected,
+            'private_members': self.members_private}
+        tmpl = Template(self.decl_template)
+        tmpl.environment.tests['variable'] = is_variable
+        tmpl.environment.tests['function'] = is_function
+        return tmpl.render(fields)
+        # return Template(self.decl_template).render(fields)
+
+    def member(self, member, scope='private'):
+        if 'private' == scope.lower():
+            self.members_private.append(member)
+        elif 'protected' == scope.lower():
+            self.members_protected.append(member)
+        elif 'public' == scope.lower():
+            self.members_public.append(member)
+        return self
+
+
+class Struct(Class):
+    def __init__(self, name) -> None:
+        super().__init__(name)
+        self.type = 'struct'
