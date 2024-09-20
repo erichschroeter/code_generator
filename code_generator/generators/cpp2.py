@@ -51,10 +51,25 @@ class Function:
         self.name = name
         self.type = type
         self.qualifiers = qualifiers
+        self.args = []
 
     def __str__(self) -> str:
         return self.name
 
     def declaration_str(self):
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
-        return f'{qualifiers}{self.type} {self.name}()'
+        args = ', '.join([v.declaration_str() if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
+        return f'{qualifiers}{self.type} {self.name}({args})'
+
+    def arg(self, arg):
+        """
+        Builder pattern to add an arg to the function.
+
+        Args:
+            arg -- A str or Variable
+
+        Returns:
+            self
+        """
+        self.args.append(arg)
+        return self

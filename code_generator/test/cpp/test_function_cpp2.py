@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp2 import CppIdentifierError, CppTypeError, Function
+from code_generator.generators.cpp2 import CppIdentifierError, CppTypeError, Function, Variable
 
 
 class TestFunction(unittest.TestCase):
@@ -56,3 +56,12 @@ class TestFunction(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual(str(Function('x')), 'x')
+
+    def test_decl_with_one_arg_as_str(self):
+        self.assertEqual(Function('x').arg('int').declaration_str(), 'void x(int)')
+
+    def test_decl_with_two_arg_as_str(self):
+        self.assertEqual(Function('x').arg('int').arg('bool enable').declaration_str(), 'void x(int, bool enable)')
+
+    def test_decl_with_one_arg_as_Variable(self):
+        self.assertEqual(Function('x').arg(Variable('x')).declaration_str(), 'void x(void x)')
