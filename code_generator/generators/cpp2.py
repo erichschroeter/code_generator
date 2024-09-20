@@ -37,7 +37,7 @@ class Variable:
     def __str__(self) -> str:
         return self.name
 
-    def declaration_str(self):
+    def decl_str(self):
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
         return f'{qualifiers}{self.type} {self.name}'
 
@@ -56,9 +56,9 @@ class Function:
     def __str__(self) -> str:
         return self.name
 
-    def declaration_str(self):
+    def decl_str(self):
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
-        args = ', '.join([v.declaration_str() if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
+        args = ', '.join([v.decl_str() if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
         return f'{qualifiers}{self.type} {self.name}({args})'
 
     def arg(self, arg):

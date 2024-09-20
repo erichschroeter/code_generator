@@ -40,19 +40,19 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(Variable, '_0')
 
     def test_decl_with_default_type(self):
-        self.assertEqual(Variable('x').declaration_str(), 'void x')
+        self.assertEqual(Variable('x').decl_str(), 'void x')
 
     def test_decl_with_custom_type(self):
-        self.assertEqual(Variable('x', type='bool').declaration_str(), 'bool x')
+        self.assertEqual(Variable('x', type='bool').decl_str(), 'bool x')
 
     def test_decl_raises_CppTypeError_with_type_with_whitespace(self):
         self.assertRaises(CppTypeError, Variable, 'x', type='int whitespace')
 
     def test_decl_with_custom_one_qualifier(self):
-        self.assertEqual(Variable('x', qualifiers=['extern']).declaration_str(), 'extern void x')
+        self.assertEqual(Variable('x', qualifiers=['extern']).decl_str(), 'extern void x')
 
     def test_decl_with_custom_two_qualifier(self):
-        self.assertEqual(Variable('x', qualifiers=['extern', 'const']).declaration_str(), 'extern const void x')
+        self.assertEqual(Variable('x', qualifiers=['extern', 'const']).decl_str(), 'extern const void x')
 
     def test_str(self):
         self.assertEqual(str(Variable('x')), 'x')

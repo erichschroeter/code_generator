@@ -40,28 +40,28 @@ class TestFunction(unittest.TestCase):
         self.assertTrue(Function, '_0')
 
     def test_decl_with_default_type(self):
-        self.assertEqual(Function('x').declaration_str(), 'void x()')
+        self.assertEqual(Function('x').decl_str(), 'void x()')
 
     def test_decl_with_custom_type(self):
-        self.assertEqual(Function('x', type='bool').declaration_str(), 'bool x()')
+        self.assertEqual(Function('x', type='bool').decl_str(), 'bool x()')
 
     def test_decl_raises_CppTypeError_with_type_with_whitespace(self):
         self.assertRaises(CppTypeError, Function, 'x', type='int whitespace')
 
     def test_decl_with_custom_one_qualifier(self):
-        self.assertEqual(Function('x', qualifiers=['virtual']).declaration_str(), 'virtual void x()')
+        self.assertEqual(Function('x', qualifiers=['virtual']).decl_str(), 'virtual void x()')
 
     def test_decl_with_custom_two_qualifier(self):
-        self.assertEqual(Function('x', qualifiers=['static', 'const']).declaration_str(), 'static const void x()')
+        self.assertEqual(Function('x', qualifiers=['static', 'const']).decl_str(), 'static const void x()')
 
     def test_str(self):
         self.assertEqual(str(Function('x')), 'x')
 
     def test_decl_with_one_arg_as_str(self):
-        self.assertEqual(Function('x').arg('int').declaration_str(), 'void x(int)')
+        self.assertEqual(Function('x').arg('int').decl_str(), 'void x(int)')
 
     def test_decl_with_two_arg_as_str(self):
-        self.assertEqual(Function('x').arg('int').arg('bool enable').declaration_str(), 'void x(int, bool enable)')
+        self.assertEqual(Function('x').arg('int').arg('bool enable').decl_str(), 'void x(int, bool enable)')
 
     def test_decl_with_one_arg_as_Variable(self):
-        self.assertEqual(Function('x').arg(Variable('x')).declaration_str(), 'void x(void x)')
+        self.assertEqual(Function('x').arg(Variable('x')).decl_str(), 'void x(void x)')
