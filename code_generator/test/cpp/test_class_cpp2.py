@@ -139,3 +139,12 @@ class TestStruct(unittest.TestCase):
                                 {
                                 }'''),
                                 Struct('x').decl_str())
+
+    def test_decl_with_one_member_default_as_public(self):
+        self.assertEqual(dedent('''\
+                                struct x
+                                {
+                                public:
+                                    static const int X = 0;
+                                }'''),
+                                Struct('x').member('static const int X = 0;').decl_str())

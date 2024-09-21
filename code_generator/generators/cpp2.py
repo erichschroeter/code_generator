@@ -160,3 +160,6 @@ class Struct(Class):
     def __init__(self, name) -> None:
         super().__init__(name)
         self.type = 'struct'
+
+    def member(self, member, scope='public'):
+        return super().member(member, scope)
