@@ -9,8 +9,8 @@ class TestVariable(unittest.TestCase):
     def test_raises_CppIdentifierError_starts_with_digit(self):
         self.assertRaises(CppIdentifierError, Variable, '0')
 
-    def test_raises_CppIdentifierError_starts_with_digit(self):
-        self.assertRaises(CppIdentifierError, Variable, '0')
+    def test_raises_CppTypeError_starts_with_digit(self):
+        self.assertRaises(CppTypeError, Variable, 'x','0')
 
     def test_name_x(self):
         self.assertTrue(Variable('x'))

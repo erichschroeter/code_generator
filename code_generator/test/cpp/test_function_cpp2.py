@@ -9,8 +9,8 @@ class TestFunction(unittest.TestCase):
     def test_raises_CppIdentifierError_starts_with_digit(self):
         self.assertRaises(CppIdentifierError, Function, '0')
 
-    def test_raises_CppIdentifierError_starts_with_digit(self):
-        self.assertRaises(CppIdentifierError, Function, '0')
+    def test_raises_CppTypeError_starts_with_digit(self):
+        self.assertRaises(CppTypeError, Function, 'x', '0')
 
     def test_name_x(self):
         self.assertTrue(Function('x'))
@@ -68,3 +68,15 @@ class TestFunction(unittest.TestCase):
 
     def test_decl_with_two_arg_as_Variable(self):
         self.assertEqual(Function('x').arg(Variable('x')).arg(Variable('y', type='int')).decl_str(), 'void x(void x, int y)')
+
+    def test_call_with_one_arg_as_str(self):
+        self.assertEqual('y', Function('x').arg('y').call_str())
+
+    def test_call_with_two_arg_as_str(self):
+        self.assertEqual('y, z', Function('x').arg('y').arg('z').call_str())
+
+    def test_call_with_one_arg_as_Variable(self):
+        self.assertEqual('y', Function('x').arg(Variable('y')).call_str())
+
+    def test_call_with_two_arg_as_Variable(self):
+        self.assertEqual('y, z', Function('x').arg(Variable('y')).arg(Variable('z')).call_str())

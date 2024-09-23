@@ -68,6 +68,10 @@ class Function:
         args = ', '.join([v.decl_str() if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
         return f'{qualifiers}{self.type} {self.name}({args})'
 
+    def call_str(self):
+        args = ', '.join([str(v) if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
+        return f'{args}'
+
     def arg(self, arg):
         """
         Builder pattern to add an arg to the function.
@@ -144,7 +148,6 @@ class Class:
         tmpl.environment.tests['variable'] = is_variable
         tmpl.environment.tests['function'] = is_function
         return tmpl.render(fields)
-        # return Template(self.decl_template).render(fields)
 
     def member(self, member, scope='private'):
         if 'private' == scope.lower():
@@ -163,3 +166,43 @@ class Struct(Class):
 
     def member(self, member, scope='public'):
         return super().member(member, scope)
+
+
+class Array:
+    def __init__(self, name, type='int') -> None:
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
+            raise CppIdentifierError(name)
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(type):
+            raise CppTypeError(name)
+        self.name = name
+        self.type = type
+        self.items = []
+        self.def_template = dedent('''\
+        {{type}} {{name}}[] =
+        {
+        {%- if items %}
+            {%- for item in items %}
+            {{item}}{{"," if not loop.last else ""}}
+            {%- endfor -%}
+        {% endif %}
+        }''')
+
+    def __str__(self) -> str:
+        return self.name
+
+    def decl_str(self):
+        return f'{self.type} {self.name}[]'
+
+    def def_str(self):
+        fields = {
+            'type': self.type,
+            'name': self.name,
+            'items': self.items}
+        tmpl = Template(self.def_template)
+        tmpl.environment.tests['variable'] = is_variable
+        tmpl.environment.tests['function'] = is_function
+        return tmpl.render(fields)
+
+    def add(self, item):
+        self.items.append(item)
+        return self
