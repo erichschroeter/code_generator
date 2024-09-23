@@ -230,3 +230,47 @@ class Array:
     def add(self, item):
         self.items.append(item)
         return self
+
+
+class Header:
+    def __init__(self, filename) -> None:
+        self.filename = filename
+        self.includes = []
+        self.includes_local = []
+        self._guard = None
+        self.template = dedent('''\
+        {%- if guard -%}
+        #ifndef {{ guard }}
+        #define {{ guard }}
+        {%- endif -%}
+        {%- if includes -%}
+        {{ includes }}
+        {%- endif -%}
+        {%- if includes_local -%}
+        {{ includes_local }}
+        {%- endif -%}
+        {%- if guard %}
+        #endif
+        {%- endif -%}''')
+
+    def __str__(self) -> str:
+        includes = '\n'.join([f'#include <{include}>' for include in self.includes])
+        includes_local = '\n'.join([f'#include "{include}"' for include in self.includes_local])
+        fields = {
+            'guard': self._guard,
+            'includes_local': includes_local,
+            'includes': includes}
+        tmpl = Template(self.template)
+        return tmpl.render(fields)
+
+    def guard(self, guard):
+        self._guard = guard
+        return self
+
+    def include(self, header):
+        self.includes.append(header)
+        return self
+
+    def includelocal(self, header):
+        self.includes_local.append(header)
+        return self
