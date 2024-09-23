@@ -7,6 +7,8 @@ from jinja2 import Template
 
 CPP_IDENTIFIER_REGEX = r'^[a-zA-Z_]+[a-zA-Z0-9_]*$'
 CPP_IDENTIFIER_PATTERN = re.compile(CPP_IDENTIFIER_REGEX)
+CPP_TYPE_REGEX = r'^([a-zA-Z_]+[a-zA-Z0-9_]*| |&|\*)*$'
+CPP_TYPE_PATTERN = re.compile(CPP_TYPE_REGEX)
 
 
 class CppSyntaxError(Exception):
@@ -31,7 +33,7 @@ class Variable:
     def __init__(self, name, type='void', qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
             raise CppIdentifierError(name)
-        if not CPP_IDENTIFIER_PATTERN.fullmatch(type):
+        if not CPP_TYPE_PATTERN.fullmatch(type):
             raise CppTypeError(type)
         self.name = name
         self.type = type
@@ -46,6 +48,12 @@ class Variable:
 
 
 def is_variable(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Variable, else False.
+    """
     return isinstance(obj, Variable)
 
 
@@ -53,7 +61,7 @@ class Function:
     def __init__(self, name, type='void', qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
             raise CppIdentifierError(name)
-        if not CPP_IDENTIFIER_PATTERN.fullmatch(type):
+        if not CPP_TYPE_PATTERN.fullmatch(type):
             raise CppTypeError(type)
         self.name = name
         self.type = type
@@ -87,6 +95,12 @@ class Function:
 
 
 def is_function(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Function, else False.
+    """
     return isinstance(obj, Function)
 
 
