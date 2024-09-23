@@ -38,13 +38,23 @@ class Variable:
         self.name = name
         self.type = type
         self.qualifiers = qualifiers
+        self.value = 0
 
     def __str__(self) -> str:
         return self.name
 
+    def val(self, val):
+        self.value = val
+        return self
+
     def decl_str(self):
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
         return f'{qualifiers}{self.type} {self.name}'
+
+    def def_str(self):
+        qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
+        value = str(self.value) if type(self.value) != str else f'"{self.value}"'
+        return f'{qualifiers}{self.type} {self.name} = {value}'
 
 
 def is_variable(obj):

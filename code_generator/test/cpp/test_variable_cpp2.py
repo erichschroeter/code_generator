@@ -65,3 +65,15 @@ class TestVariable(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual(str(Variable('x')), 'x')
+
+    def test_def_with_default(self):
+        self.assertEqual(Variable('x').def_str(), 'void x = 0')
+
+    def test_def_with_value_as_int(self):
+        self.assertEqual(Variable('x').val(1).def_str(), 'void x = 1')
+
+    def test_def_with_value_as_str(self):
+        self.assertEqual(Variable('x').val('hello').def_str(), 'void x = "hello"')
+
+    def test_def_with_value_as_Variable(self):
+        self.assertEqual(Variable('x').val(Variable('myfunc')).def_str(), 'void x = myfunc')
