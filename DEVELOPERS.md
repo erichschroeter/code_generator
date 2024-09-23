@@ -22,6 +22,13 @@ flowchart LR
     DeclarationFile --> .h
 ```
 
+## Update pypi version
+
+```bash
+python3 -m build
+python3 -m twine upload --repository testpypi dist/*
+```
+
 ## Executing unit tests
 The following command will execute the unit tests.
 
