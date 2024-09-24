@@ -30,6 +30,36 @@ class CppTypeError(CppSyntaxError):
         super().__init__()
 
 
+def is_variable(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Variable, else False.
+    """
+    return isinstance(obj, Variable)
+
+
+def is_function(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Function, else False.
+    """
+    return isinstance(obj, Function)
+
+
+def is_class(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Class, else False.
+    """
+    return isinstance(obj, Class)
+
+
 class Variable:
     def __init__(self, name, type='void', qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
@@ -56,16 +86,6 @@ class Variable:
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
         value = str(self.value) if type(self.value) != str else f'"{self.value}"'
         return f'{qualifiers}{self.type} {self.name} = {value}'
-
-
-def is_variable(obj):
-    """
-    Intended use is for Jinja2 template.
-
-    Returns:
-        Returns True if `obj` is a Variable, else False.
-    """
-    return isinstance(obj, Variable)
 
 
 class Function:
@@ -105,17 +125,10 @@ class Function:
         return self
 
 
-def is_function(obj):
-    """
-    Intended use is for Jinja2 template.
-
-    Returns:
-        Returns True if `obj` is a Function, else False.
-    """
-    return isinstance(obj, Function)
-
-
 class Class:
+    """
+
+    """
     def __init__(self, name) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
             raise CppIdentifierError(name)
@@ -191,16 +204,6 @@ class Struct(Class):
 
     def member(self, member, scope='public'):
         return super().member(member, scope)
-
-
-def is_class(obj):
-    """
-    Intended use is for Jinja2 template.
-
-    Returns:
-        Returns True if `obj` is a Class, else False.
-    """
-    return isinstance(obj, Class)
 
 
 class Array:
