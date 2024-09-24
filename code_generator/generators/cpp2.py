@@ -246,28 +246,8 @@ class Array:
         return self
 
 
-class Code:
-    def __init__(self, writer) -> None:
-        self.indent = 0
-        self.writer = writer
-
-    def __enter__(self):
-        self.indent = 0
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.indent = 0
-
-    def indent(self):
-        self.indent += 1
-
-    def write(self, text):
-        self.writer.write(text)
-        return self
-
-
-class Header(Code):
-    def __init__(self, filename, writer=StringIO()) -> None:
-        super().__init__(writer)
+class Header:
+    def __init__(self, filename) -> None:
         self.filename = filename
         self.includes = []
         self.includes_local = []
