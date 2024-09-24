@@ -1,4 +1,5 @@
 
+from abc import ABC, abstractmethod
 from io import StringIO
 import re
 from textwrap import dedent
@@ -208,7 +209,7 @@ class Struct(Class):
         return super().member(member, scope)
 
 
-class Array:
+class Array(ABC):
     def __init__(self, name, type='int') -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
             raise CppIdentifierError(name)
@@ -217,8 +218,9 @@ class Array:
         self.name = name
         self.type = type
         self.items = []
+        self._size = None
         self.def_template = dedent('''\
-        {{type}} {{name}}[] =
+        {{type}} {{name}}[{{size}}] =
         {
         {%- if items %}
             {%- for item in items %}
@@ -230,22 +232,47 @@ class Array:
     def __str__(self) -> str:
         return self.name
 
+    @abstractmethod
+    def decl_str(self) -> str:
+        pass
+
+    @abstractmethod
+    def def_str(self) -> str:
+        pass
+
+    def size(self, the_size):
+        self._size = the_size
+        return self
+
+    def add(self, item):
+        self.items.append(item)
+        return self
+
+
+class ArrayOnStack(Array):
+    def __init__(self, name, type='int') -> None:
+        super().__init__(name, type)
+
     def decl_str(self):
-        return f'{self.type} {self.name}[]'
+        the_size = self._size if self._size is not None else len(self.items)
+        return f'{self.type} {self.name}[{str(the_size)}]'
 
     def def_str(self):
+        the_size = self._size if self._size is not None else len(self.items)
         fields = {
             'type': self.type,
             'name': self.name,
-            'items': self.items}
+            'items': self.items,
+            'size': the_size}
         tmpl = Template(self.def_template)
         tmpl.environment.tests['variable'] = is_variable
         tmpl.environment.tests['function'] = is_function
         return tmpl.render(fields)
 
-    def add(self, item):
-        self.items.append(item)
-        return self
+
+class ArrayOnHeap(Array):
+    def __init__(self, name, type='int') -> None:
+        super().__init__(name, type)
 
 
 class Header:
