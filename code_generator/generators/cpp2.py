@@ -232,8 +232,28 @@ class Array:
         return self
 
 
-class Header:
+class Code:
+    def __init__(self) -> None:
+        self.indent = 0
+        self.file = None
+        self.stdout = None
+
+    def __enter__(self):
+        self.indent = 0
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.indent = 0
+
+    def indent(self):
+        self.indent += 1
+
+    def write(self, text):
+        self.text.append(text)
+
+
+class Header(Code):
     def __init__(self, filename) -> None:
+        super().__init__()
         self.filename = filename
         self.includes = []
         self.includes_local = []

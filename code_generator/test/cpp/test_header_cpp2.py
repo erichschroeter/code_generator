@@ -27,3 +27,8 @@ class TestHeader(unittest.TestCase):
         self.assertEqual(dedent('''\
                                 #include "stdint.h"'''),
                                 str(Header('x.h').includelocal('stdint.h')))
+
+    def test_str_with_append(self):
+        self.assertEqual(dedent('''\
+                                static const int X = 0;'''),
+                                str(Header('x.h').append('static const int X = 0;')))
