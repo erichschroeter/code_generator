@@ -89,3 +89,6 @@ class TestFunction(unittest.TestCase):
 
     def test_call_with_two_arg_as_Variable(self):
         self.assertEqual('y, z', Function('x').arg(Variable('y')).arg(Variable('z')).call_str())
+
+    def test_call_with_one_arg_as_int(self):
+        self.assertEqual('1', Function('x').arg(1).call_str())

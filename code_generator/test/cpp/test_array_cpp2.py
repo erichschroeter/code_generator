@@ -106,3 +106,22 @@ class TestArrayOnStack(unittest.TestCase):
                                     {"Jane", "Doe", 18}
                                 }'''),
                                 ArrayOnStack('x', 'Person').add('{"John", "Doe", 21}').add('{"Jane", "Doe", 18}').def_str())
+
+    def test_def_str_with_one_item_as_Function(self):
+        self.assertEqual(dedent('''\
+                                Person x[1] =
+                                {
+                                    {"John", "Doe", 21}
+                                }'''),
+                                ArrayOnStack('x', 'Person').add(Function('Person').arg('"John"').arg('"Doe"').arg(21)).def_str())
+
+    def test_def_str_with_two_item_as_Function(self):
+        self.assertEqual(dedent('''\
+                                Person x[2] =
+                                {
+                                    {"John", "Doe", 21},
+                                    {"Jane", "Doe", 18}
+                                }'''),
+                                ArrayOnStack('x', 'Person')
+                                .add(Function('Person').arg('"John"').arg('"Doe"').arg(21))
+                                .add(Function('Person').arg('"Jane"').arg('"Doe"').arg(18)).def_str())

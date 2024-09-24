@@ -109,7 +109,7 @@ class Function:
         return f'{qualifiers}{self.type} {self.name}({args})'
 
     def call_str(self):
-        args = ', '.join([str(v) if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
+        args = ', '.join([str(v) if type(v) != str else v for v in self.args]) if self.args is not None else ''
         return f'{args}'
 
     def arg(self, arg):
@@ -224,7 +224,11 @@ class Array(ABC):
         {
         {%- if items %}
             {%- for item in items %}
+            {%- if item is function %}
+            {{ "{" }}{{ item.call_str() }}{{ "}" }}{{"," if not loop.last else ""}}
+            {%- else %}
             {{item}}{{"," if not loop.last else ""}}
+            {%- endif %}
             {%- endfor -%}
         {% endif %}
         }''')
