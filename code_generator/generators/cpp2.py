@@ -1,4 +1,5 @@
 
+from io import StringIO
 import re
 from textwrap import dedent
 
@@ -192,6 +193,16 @@ class Struct(Class):
         return super().member(member, scope)
 
 
+def is_class(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Class, else False.
+    """
+    return isinstance(obj, Class)
+
+
 class Array:
     def __init__(self, name, type='int') -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
@@ -233,10 +244,9 @@ class Array:
 
 
 class Code:
-    def __init__(self) -> None:
+    def __init__(self, writer) -> None:
         self.indent = 0
-        self.file = None
-        self.stdout = None
+        self.writer = writer
 
     def __enter__(self):
         self.indent = 0
@@ -248,15 +258,17 @@ class Code:
         self.indent += 1
 
     def write(self, text):
-        self.text.append(text)
+        self.writer.write(text)
+        return self
 
 
 class Header(Code):
-    def __init__(self, filename) -> None:
-        super().__init__()
+    def __init__(self, filename, writer=StringIO()) -> None:
+        super().__init__(writer)
         self.filename = filename
         self.includes = []
         self.includes_local = []
+        self.cpp_items = []
         self._guard = None
         self.template = dedent('''\
         {%- if guard -%}
@@ -269,6 +281,15 @@ class Header(Code):
         {%- if includes_local -%}
         {{ includes_local }}
         {%- endif -%}
+        {%- if cpp_items -%}
+        {%- for cpp_item in cpp_items -%}
+        {%- if cpp_item is variable or cpp_item is function or cpp_item is class -%}
+        {{ cpp_item.decl_str() }};
+        {%- else -%}
+        {{ cpp_item }}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- endif -%}
         {%- if guard %}
         #endif
         {%- endif -%}''')
@@ -279,8 +300,12 @@ class Header(Code):
         fields = {
             'guard': self._guard,
             'includes_local': includes_local,
-            'includes': includes}
+            'includes': includes,
+            'cpp_items': self.cpp_items}
         tmpl = Template(self.template)
+        tmpl.environment.tests['variable'] = is_variable
+        tmpl.environment.tests['function'] = is_function
+        tmpl.environment.tests['class'] = is_class
         return tmpl.render(fields)
 
     def guard(self, guard):
@@ -293,4 +318,8 @@ class Header(Code):
 
     def includelocal(self, header):
         self.includes_local.append(header)
+        return self
+
+    def add(self, cpp_item):
+        self.cpp_items.append(cpp_item)
         return self
