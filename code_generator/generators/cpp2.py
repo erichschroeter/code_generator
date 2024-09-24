@@ -127,7 +127,9 @@ class Function:
 
 class Class:
     """
+    Creates a C++ class to add items such as variables, functions, etc.
 
+    To render, the `decl_template` may be overridden for customization.
     """
     def __init__(self, name) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
@@ -257,33 +259,29 @@ class Header:
         {%- if guard -%}
         #ifndef {{ guard }}
         #define {{ guard }}
-        {%- endif -%}
-        {%- if includes -%}
-        {{ includes }}
-        {%- endif -%}
-        {%- if includes_local -%}
-        {{ includes_local }}
-        {%- endif -%}
-        {%- if cpp_items -%}
-        {%- for cpp_item in cpp_items -%}
+        {% endif -%}
+        {%- if includes %}{% for include in includes -%}
+            #include <{{ include }}>
+        {% endfor -%}{% endif %}
+        {%- if includes_local %}{% for include in includes_local -%}
+            #include "{{ include }}"
+        {% endfor -%}{% endif %}
+        {%- if cpp_items %}{% for cpp_item in cpp_items -%}
         {%- if cpp_item is variable or cpp_item is function or cpp_item is class -%}
         {{ cpp_item.decl_str() }};
-        {%- else -%}
+        {% else -%}
         {{ cpp_item }}
-        {%- endif -%}
-        {%- endfor -%}
-        {%- endif -%}
-        {%- if guard %}
+        {% endif -%}
+        {% endfor -%}{% endif %}
+        {%- if guard -%}
         #endif
-        {%- endif -%}''')
+        {% endif %}''')
 
     def __str__(self) -> str:
-        includes = '\n'.join([f'#include <{include}>' for include in self.includes])
-        includes_local = '\n'.join([f'#include "{include}"' for include in self.includes_local])
         fields = {
             'guard': self._guard,
-            'includes_local': includes_local,
-            'includes': includes,
+            'includes_local': self.includes_local,
+            'includes': self.includes,
             'cpp_items': self.cpp_items}
         tmpl = Template(self.template)
         tmpl.environment.tests['variable'] = is_variable
