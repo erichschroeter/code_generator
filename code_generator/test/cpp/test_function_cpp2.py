@@ -95,16 +95,20 @@ class TestFunction(unittest.TestCase):
 
     def test_impl_as_str(self):
         self.assertEqual(dedent('''\
-                                {
-                                return false;
-                                }'''),
+                                return false;'''),
                         Function('x').impl('return false;').impl_str())
 
-    def test_impl_as_str(self):
+    def test_impl_as_callable(self):
         def increment_impl() -> str:
             return 'count++;'
         self.assertEqual(dedent('''\
-                                {
-                                count++;
-                                }'''),
+                                count++;'''),
                         Function('x').impl(increment_impl).impl_str())
+
+    def test_def_as_str(self):
+        self.assertEqual(dedent('''\
+                                void x()
+                                {
+                                return false;
+                                }'''),
+                        Function('x').impl('return false;').def_str())

@@ -127,6 +127,13 @@ class TestClass(unittest.TestCase):
                                 }'''),
                                 Class('x').member(Function('is_enabled', type='bool'), scope='public').decl_str())
 
+    def test_def_with_one_public_member_as_Function(self):
+        self.assertEqual(dedent('''\
+                                bool x::is_enabled()
+                                {
+                                }'''),
+                                Class('x').member(Function('is_enabled', type='bool'), scope='public').def_str())
+
 
 class TestStruct(unittest.TestCase):
 

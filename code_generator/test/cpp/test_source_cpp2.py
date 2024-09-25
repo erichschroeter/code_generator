@@ -57,13 +57,15 @@ class TestSource(unittest.TestCase):
 
     def test_str_with_add_one_item_as_Variable(self):
         self.assertEqual(dedent('''\
-                                int X;
+                                int X = 0;
                                 '''),
                                 str(Source('x.cpp').add(Variable('X', 'int'))))
 
     def test_str_with_add_one_item_as_Function(self):
         self.assertEqual(dedent('''\
-                                bool is_enabled();
+                                bool is_enabled()
+                                {
+                                }
                                 '''),
                                 str(Source('x.cpp').add(Function('is_enabled', 'bool'))))
 

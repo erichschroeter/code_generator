@@ -143,9 +143,19 @@ class Function:
 
     def impl_str(self):
         if isinstance(self._impl, str):
-            return f'{{\n{self._impl}\n}}'
+            return f'{self._impl}'
         elif isinstance(self._impl, Callable):
-            return f'{{\n{self._impl()}\n}}'
+            return f'{self._impl()}'
+        else:
+            return ''
+
+    def def_str(self):
+        qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
+        args = ', '.join([v.decl_str() if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
+        # return f'{qualifiers}{self.type} {self.name}({args})'
+        the_impl = self.impl_str()
+        the_impl = f'{the_impl}\n' if the_impl else the_impl
+        return f'{qualifiers}{self.type} {self.name}({args})\n{{\n{the_impl}}}'
 
 
 
@@ -197,6 +207,20 @@ class Class:
             {%- endfor -%}
         {% endif %}
         }''')
+        self.def_template = dedent('''\
+        {{type}} {{name}}
+        {
+        {%- if public_members %}
+        public:
+            {%- for member in public_members %}
+            {%- if member is variable or member is function %}
+            {{member.decl_str()}};
+            {%- else %}
+            {{member}}
+            {%- endif -%}
+            {%- endfor -%}
+        {% endif %}
+        ''')
 
     def __str__(self) -> str:
         return self.name
@@ -212,6 +236,26 @@ class Class:
         tmpl.environment.tests['variable'] = is_variable
         tmpl.environment.tests['function'] = is_function
         return tmpl.render(fields)
+
+    def def_str(self):
+        return self.decl_str()
+        # code = StringIO()
+        # for member in self.members_public:
+        #     code.write(member.def_str())
+        # for member in self.members_protected:
+        #     code.write(member.def_str())
+        # for member in self.members_private:
+        #     code.write(member.def_str())
+        # return code.getvalue()
+        # fields = {
+        #     'name': self.name,
+        #     'public_members': self.members_public,
+        #     'protected_members': self.members_protected,
+        #     'private_members': self.members_private}
+        # tmpl = Template(self.decl_template)
+        # tmpl.environment.tests['variable'] = is_variable
+        # tmpl.environment.tests['function'] = is_function
+        # return tmpl.render(fields)
 
     def member(self, member, scope='private'):
         if 'private' == scope.lower():
@@ -386,8 +430,10 @@ class Source:
             {%- endif %}
         {% endfor -%}{% endif %}
         {%- if cpp_items %}{% for cpp_item in cpp_items -%}
-        {%- if cpp_item is variable or cpp_item is function or cpp_item is class -%}
-        {{ cpp_item.decl_str() }};
+        {%- if cpp_item is variable or cpp_item is class -%}
+        {{ cpp_item.def_str() }};
+        {% elif cpp_item is function -%}
+        {{ cpp_item.def_str() }}
         {% else -%}
         {{ cpp_item }}
         {% endif -%}
