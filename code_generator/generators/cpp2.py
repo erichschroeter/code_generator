@@ -62,6 +62,16 @@ def is_class(obj):
     return isinstance(obj, Class)
 
 
+def is_header(obj):
+    """
+    Intended use is for Jinja2 template.
+
+    Returns:
+        Returns True if `obj` is a Header, else False.
+    """
+    return isinstance(obj, Header)
+
+
 class Variable:
     def __init__(self, name, type='void', qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
@@ -362,10 +372,18 @@ class Source:
         #define {{ guard }}
         {% endif -%}
         {%- if includes %}{% for include in includes -%}
+            {%- if include is header -%}
+            #include <{{ include.filename }}>
+            {%- else -%}
             #include <{{ include }}>
+            {%- endif %}
         {% endfor -%}{% endif %}
         {%- if includes_local %}{% for include in includes_local -%}
+            {%- if include is header -%}
+            #include "{{ include.filename }}"
+            {%- else -%}
             #include "{{ include }}"
+            {%- endif %}
         {% endfor -%}{% endif %}
         {%- if cpp_items %}{% for cpp_item in cpp_items -%}
         {%- if cpp_item is variable or cpp_item is function or cpp_item is class -%}
@@ -387,6 +405,7 @@ class Source:
         tmpl.environment.tests['variable'] = is_variable
         tmpl.environment.tests['function'] = is_function
         tmpl.environment.tests['class'] = is_class
+        tmpl.environment.tests['header'] = is_header
         return tmpl.render(fields)
 
     def include(self, header):

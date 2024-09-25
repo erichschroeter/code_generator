@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp2 import Class, Function, Source, Variable
+from code_generator.generators.cpp2 import Class, Function, Header, Source, Variable
 
 
 class TestSource(unittest.TestCase):
@@ -11,11 +11,17 @@ class TestSource(unittest.TestCase):
                                 '''),
                                 str(Source('x.cpp')))
 
-    def test_str_with_one_include(self):
+    def test_str_with_one_include_as_str(self):
         self.assertEqual(dedent('''\
                                 #include <iostream>
                                 '''),
                                 str(Source('x.cpp').include('iostream')))
+
+    def test_str_with_one_include_as_Header(self):
+        self.assertEqual(dedent('''\
+                                #include <custom.h>
+                                '''),
+                                str(Source('x.cpp').include(Header('custom.h'))))
 
     def test_str_with_two_include(self):
         self.assertEqual(dedent('''\
@@ -24,11 +30,17 @@ class TestSource(unittest.TestCase):
                                 '''),
                                 str(Source('x.cpp').include('cassert').include('iostream')))
 
-    def test_str_with_one_includelocal(self):
+    def test_str_with_one_includelocal_as_str(self):
         self.assertEqual(dedent('''\
                                 #include "stdint.h"
                                 '''),
                                 str(Source('x.cpp').includelocal('stdint.h')))
+
+    def test_str_with_one_includelocal_as_Header(self):
+        self.assertEqual(dedent('''\
+                                #include "custom.h"
+                                '''),
+                                str(Source('x.cpp').includelocal(Header('custom.h'))))
 
     def test_str_with_two_includelocal(self):
         self.assertEqual(dedent('''\
