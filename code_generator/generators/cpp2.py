@@ -111,6 +111,7 @@ class Function:
         self.qualifiers = qualifiers
         self.args = []
         self._impl = None
+        self._namespace = None
 
     def __str__(self) -> str:
         return self.name
@@ -137,6 +138,10 @@ class Function:
         self.args.append(arg)
         return self
 
+    def namespace(self, the_namespace):
+        self._namespace = the_namespace
+        return self
+
     def impl(self, the_impl):
         self._impl = the_impl
         return self
@@ -151,11 +156,11 @@ class Function:
 
     def def_str(self):
         qualifiers = ' '.join(self.qualifiers) + ' ' if self.qualifiers is not None else ''
-        args = ', '.join([v.decl_str() if type(v) == Variable else v for v in self.args]) if self.args is not None else ''
-        # return f'{qualifiers}{self.type} {self.name}({args})'
+        args = self.call_str()
         the_impl = self.impl_str()
         the_impl = f'{the_impl}\n' if the_impl else the_impl
-        return f'{qualifiers}{self.type} {self.name}({args})\n{{\n{the_impl}}}'
+        the_namespace = f'{self._namespace}::' if self._namespace else ''
+        return f'{qualifiers}{self.type} {the_namespace}{self.name}({args})\n{{\n{the_impl}}}'
 
 
 
@@ -208,13 +213,10 @@ class Class:
         {% endif %}
         }''')
         self.def_template = dedent('''\
-        {{type}} {{name}}
-        {
         {%- if public_members %}
-        public:
             {%- for member in public_members %}
             {%- if member is variable or member is function %}
-            {{member.decl_str()}};
+            {{member.def_str()}};
             {%- else %}
             {{member}}
             {%- endif -%}
@@ -238,7 +240,7 @@ class Class:
         return tmpl.render(fields)
 
     def def_str(self):
-        return self.decl_str()
+        # return self.decl_str()
         # code = StringIO()
         # for member in self.members_public:
         #     code.write(member.def_str())
@@ -247,15 +249,15 @@ class Class:
         # for member in self.members_private:
         #     code.write(member.def_str())
         # return code.getvalue()
-        # fields = {
-        #     'name': self.name,
-        #     'public_members': self.members_public,
-        #     'protected_members': self.members_protected,
-        #     'private_members': self.members_private}
-        # tmpl = Template(self.decl_template)
-        # tmpl.environment.tests['variable'] = is_variable
-        # tmpl.environment.tests['function'] = is_function
-        # return tmpl.render(fields)
+        fields = {
+            'name': self.name,
+            'public_members': self.members_public,
+            'protected_members': self.members_protected,
+            'private_members': self.members_private}
+        tmpl = Template(self.decl_template)
+        tmpl.environment.tests['variable'] = is_variable
+        tmpl.environment.tests['function'] = is_function
+        return tmpl.render(fields)
 
     def member(self, member, scope='private'):
         if 'private' == scope.lower():

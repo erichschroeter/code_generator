@@ -112,3 +112,10 @@ class TestFunction(unittest.TestCase):
                                 return false;
                                 }'''),
                         Function('x').impl('return false;').def_str())
+
+    def test_def_with_namespace(self):
+        self.assertEqual(dedent('''\
+                                void MyClass::x()
+                                {
+                                }'''),
+                        Function('x').namespace('MyClass').def_str())
