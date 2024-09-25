@@ -335,3 +335,55 @@ class Header:
     def add(self, cpp_item):
         self.cpp_items.append(cpp_item)
         return self
+
+
+class Source:
+    def __init__(self, filename) -> None:
+        self.filename = filename
+        self.includes = []
+        self.includes_local = []
+        self.cpp_items = []
+        self.template = dedent('''\
+        {%- if guard -%}
+        #ifndef {{ guard }}
+        #define {{ guard }}
+        {% endif -%}
+        {%- if includes %}{% for include in includes -%}
+            #include <{{ include }}>
+        {% endfor -%}{% endif %}
+        {%- if includes_local %}{% for include in includes_local -%}
+            #include "{{ include }}"
+        {% endfor -%}{% endif %}
+        {%- if cpp_items %}{% for cpp_item in cpp_items -%}
+        {%- if cpp_item is variable or cpp_item is function or cpp_item is class -%}
+        {{ cpp_item.decl_str() }};
+        {% else -%}
+        {{ cpp_item }}
+        {% endif -%}
+        {% endfor -%}{% endif %}
+        {%- if guard -%}
+        #endif
+        {% endif %}''')
+
+    def __str__(self) -> str:
+        fields = {
+            'includes_local': self.includes_local,
+            'includes': self.includes,
+            'cpp_items': self.cpp_items}
+        tmpl = Template(self.template)
+        tmpl.environment.tests['variable'] = is_variable
+        tmpl.environment.tests['function'] = is_function
+        tmpl.environment.tests['class'] = is_class
+        return tmpl.render(fields)
+
+    def include(self, header):
+        self.includes.append(header)
+        return self
+
+    def includelocal(self, header):
+        self.includes_local.append(header)
+        return self
+
+    def add(self, cpp_item):
+        self.cpp_items.append(cpp_item)
+        return self
