@@ -92,3 +92,19 @@ class TestFunction(unittest.TestCase):
 
     def test_call_with_one_arg_as_int(self):
         self.assertEqual('1', Function('x').arg(1).call_str())
+
+    def test_impl_as_str(self):
+        self.assertEqual(dedent('''\
+                                {
+                                return false;
+                                }'''),
+                        Function('x').impl('return false;').impl_str())
+
+    def test_impl_as_str(self):
+        def increment_impl() -> str:
+            return 'count++;'
+        self.assertEqual(dedent('''\
+                                {
+                                count++;
+                                }'''),
+                        Function('x').impl(increment_impl).impl_str())

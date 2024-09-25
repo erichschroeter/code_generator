@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from io import StringIO
 import re
 from textwrap import dedent
+from typing import Callable
 
 from jinja2 import Template
 
@@ -99,6 +100,7 @@ class Function:
         self.type = type
         self.qualifiers = qualifiers
         self.args = []
+        self._impl = None
 
     def __str__(self) -> str:
         return self.name
@@ -124,6 +126,17 @@ class Function:
         """
         self.args.append(arg)
         return self
+
+    def impl(self, the_impl):
+        self._impl = the_impl
+        return self
+
+    def impl_str(self):
+        if isinstance(self._impl, str):
+            return f'{{\n{self._impl}\n}}'
+        elif isinstance(self._impl, Callable):
+            return f'{{\n{self._impl()}\n}}'
+
 
 
 class Class:
