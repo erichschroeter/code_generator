@@ -129,10 +129,10 @@ class TestClass(unittest.TestCase):
 
     def test_def_with_one_public_member_as_Function(self):
         self.assertEqual(dedent('''\
-                                bool x::is_enabled()
+                                void x::foo()
                                 {
                                 }'''),
-                                Class('x').member(Function('is_enabled', type='bool'), scope='public').def_str())
+                                Class('x').member(Function('foo'), scope='public').def_str())
 
 
 class TestStruct(unittest.TestCase):

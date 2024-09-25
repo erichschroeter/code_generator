@@ -215,8 +215,8 @@ class Class:
         self.def_template = dedent('''\
         {%- if public_members %}
             {%- for member in public_members %}
-            {%- if member is variable or member is function %}
-            {{member.def_str()}};
+            {%- if member is variable or member is function -%}
+            {{member.def_str()}}
             {%- else %}
             {{member}}
             {%- endif -%}
@@ -251,10 +251,10 @@ class Class:
         # return code.getvalue()
         fields = {
             'name': self.name,
-            'public_members': self.members_public,
+            'public_members': [m.namespace(self.name) for m in self.members_public],
             'protected_members': self.members_protected,
             'private_members': self.members_private}
-        tmpl = Template(self.decl_template)
+        tmpl = Template(self.def_template)
         tmpl.environment.tests['variable'] = is_variable
         tmpl.environment.tests['function'] = is_function
         return tmpl.render(fields)
@@ -413,10 +413,6 @@ class Source:
         self.includes_local = []
         self.cpp_items = []
         self.template = dedent('''\
-        {%- if guard -%}
-        #ifndef {{ guard }}
-        #define {{ guard }}
-        {% endif -%}
         {%- if includes %}{% for include in includes -%}
             {%- if include is header -%}
             #include <{{ include.filename }}>
@@ -432,17 +428,16 @@ class Source:
             {%- endif %}
         {% endfor -%}{% endif %}
         {%- if cpp_items %}{% for cpp_item in cpp_items -%}
-        {%- if cpp_item is variable or cpp_item is class -%}
+        {%- if cpp_item is class -%}
+        {{ cpp_item.decl_str() }};
+        {% elif cpp_item is variable -%}
         {{ cpp_item.def_str() }};
         {% elif cpp_item is function -%}
         {{ cpp_item.def_str() }}
         {% else -%}
         {{ cpp_item }}
         {% endif -%}
-        {% endfor -%}{% endif %}
-        {%- if guard -%}
-        #endif
-        {% endif %}''')
+        {% endfor -%}{% endif %}''')
 
     def __str__(self) -> str:
         fields = {
