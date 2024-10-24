@@ -375,6 +375,47 @@ class ArrayOnHeap(Array):
         return tmpl.render(fields)
 
 
+class Enum:
+    def __init__(self, name, type=None, prefix='') -> None:
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
+            raise CppIdentifierError(name)
+        if type and not CPP_IDENTIFIER_PATTERN.fullmatch(type):
+            raise CppTypeError(name)
+        self.name = name
+        self.type = type
+        self._prefix = prefix
+        self.items = []
+        self.def_template = dedent('''\
+        enum {{name}}{% if type %} : {{type}}{% endif %}
+        {
+        {%- if items %}
+            {%- for item in items %}
+            {{ prefix }}{{item.0}}{% if item.1 %} = {{item.1}}{% endif %}{{"," if not loop.last else ""}}
+            {%- endfor -%}
+        {% endif %}
+        }''')
+
+    def __str__(self) -> str:
+        return self.name
+
+    def def_str(self) -> str:
+        fields = {
+            'type': self.type,
+            'prefix': self._prefix,
+            'name': self.name,
+            'items': self.items}
+        tmpl = build_jinja2_template(self.def_template)
+        return tmpl.render(fields)
+
+    def prefix(self, the_prefix):
+        self._prefix = the_prefix
+        return self
+
+    def add(self, item, value=None):
+        self.items.append((item, value))
+        return self
+
+
 class Header:
     def __init__(self, filename) -> None:
         self.filename = filename
