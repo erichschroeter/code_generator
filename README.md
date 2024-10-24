@@ -21,16 +21,15 @@ Python code:
 var_count = Variable(name='count', type='int').val(0)
 var_pi = Variable(name='pi', type='float').val(3.14)
 var_title = Variable(name='title', type='const char *').val('Title:')
-
 source = Source('main.cpp').add(var_count).add(var_pi).add(var_title)
 str(source)
 ```
 
 Generated C++ code:
 ```c++
-int i = 0;
-static constexpr int const& x = 42;
-extern char* name;
+int count = 0;
+float pi = 3.14;
+const char * title = "Title:";
 ```
 
 [top](#code-generator)
