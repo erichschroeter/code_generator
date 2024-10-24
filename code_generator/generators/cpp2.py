@@ -346,6 +346,33 @@ class ArrayOnStack(Array):
 class ArrayOnHeap(Array):
     def __init__(self, name, type='int') -> None:
         super().__init__(name, type)
+        self.def_template = dedent('''\
+        {{type}} *{{name}} = new {{type}}[{{size}}];
+        {%- if items %}
+        {%- for item in items %}
+        {%- if item is function %}
+        {{name}}[{{loop.index0}}] = {{ item }};
+        {%- else %}
+        {{name}}[{{loop.index0}}] = {{item}};
+        {%- endif %}
+        {%- endfor -%}
+        {% endif %}''')
+
+    def decl_str(self):
+        the_size = self._size if self._size is not None else len(self.items)
+        return f'{self.type} {self.name}[{str(the_size)}]'
+
+    def def_str(self):
+        the_size = self._size if self._size is not None else len(self.items)
+        fields = {
+            'type': self.type,
+            'name': self.name,
+            'items': self.items,
+            'size': the_size}
+        tmpl = Template(self.def_template)
+        tmpl.environment.tests['variable'] = is_variable
+        tmpl.environment.tests['function'] = is_function
+        return tmpl.render(fields)
 
 
 class Header:

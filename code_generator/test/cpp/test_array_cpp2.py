@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp2 import ArrayOnStack, Class, CppIdentifierError, CppTypeError, Function, Struct, Variable
+from code_generator.generators.cpp2 import ArrayOnHeap, ArrayOnStack, Class, CppIdentifierError, CppTypeError, Function, Struct, Variable
 
 
 class TestArrayOnStack(unittest.TestCase):
@@ -125,3 +125,53 @@ class TestArrayOnStack(unittest.TestCase):
                                 ArrayOnStack('x', 'Person')
                                 .add(Function('Person').arg('"John"').arg('"Doe"').arg(21))
                                 .add(Function('Person').arg('"Jane"').arg('"Doe"').arg(18)).def_str())
+
+
+class TestArrayOnHeap(unittest.TestCase):
+
+    def test_decl_with_size_calculated(self):
+        self.assertEqual(ArrayOnHeap('x').add(0).decl_str(), 'int x[1]')
+
+    def test_def_str_with_size_as_str(self):
+        self.assertEqual(dedent('''\
+                                int *x = new int[COUNT];
+                                x[0] = 1;'''),
+                                ArrayOnHeap('x', 'int').add(1).size('COUNT').def_str())
+
+    def test_def_str_with_size_as_Variable(self):
+        self.assertEqual(dedent('''\
+                                int *x = new int[COUNT];
+                                x[0] = 1;'''),
+                                ArrayOnHeap('x', 'int').add(1).size(Variable('COUNT')).def_str())
+
+    def test_def_str_with_one_item_as_int(self):
+        self.assertEqual(dedent('''\
+                                int *x = new int[1];
+                                x[0] = 1;'''),
+                                ArrayOnHeap('x', 'int').add(1).def_str())
+
+    def test_def_str_with_two_item_as_int(self):
+        self.assertEqual(dedent('''\
+                                int *x = new int[2];
+                                x[0] = 1;
+                                x[1] = 2;'''),
+                                ArrayOnHeap('x', 'int').add(1).add(2).def_str())
+
+    def test_def_str_with_one_item_as_str(self):
+        self.assertEqual(dedent('''\
+                                Person *x = new Person[1];
+                                x[0] = {"John", "Doe", 21};'''),
+                                ArrayOnHeap('x', 'Person').add('{"John", "Doe", 21}').def_str())
+
+    def test_def_str_with_two_item_as_str(self):
+        self.assertEqual(dedent('''\
+                                Person *x = new Person[2];
+                                x[0] = {"John", "Doe", 21};
+                                x[1] = {"Jane", "Doe", 18};'''),
+                                ArrayOnHeap('x', 'Person').add('{"John", "Doe", 21}').add('{"Jane", "Doe", 18}').def_str())
+
+    def test_def_str_with_one_item_as_Function(self):
+        self.assertEqual(dedent('''\
+                                Person *x = new Person[1];
+                                x[0] = add;'''),
+                                ArrayOnHeap('x', 'Person').add(Function('add').arg('1')).def_str())
