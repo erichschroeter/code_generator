@@ -72,6 +72,15 @@ def is_header(obj):
     return isinstance(obj, Header)
 
 
+def build_jinja2_template(template_str):
+    tmpl = Template(template_str)
+    tmpl.environment.tests['variable'] = is_variable
+    tmpl.environment.tests['function'] = is_function
+    tmpl.environment.tests['class'] = is_class
+    tmpl.environment.tests['header'] = is_header
+    return tmpl
+
+
 class Variable:
     def __init__(self, name, type='void', qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
@@ -163,7 +172,6 @@ class Function:
         return f'{qualifiers}{self.type} {the_namespace}{self.name}({args})\n{{\n{the_impl}}}'
 
 
-
 class Class:
     """
     Creates a C++ class to add items such as variables, functions, etc.
@@ -234,9 +242,7 @@ class Class:
             'public_members': self.members_public,
             'protected_members': self.members_protected,
             'private_members': self.members_private}
-        tmpl = Template(self.decl_template)
-        tmpl.environment.tests['variable'] = is_variable
-        tmpl.environment.tests['function'] = is_function
+        tmpl = build_jinja2_template(self.decl_template)
         return tmpl.render(fields)
 
     def def_str(self):
@@ -254,9 +260,7 @@ class Class:
             'public_members': [m.namespace(self.name) for m in self.members_public],
             'protected_members': self.members_protected,
             'private_members': self.members_private}
-        tmpl = Template(self.def_template)
-        tmpl.environment.tests['variable'] = is_variable
-        tmpl.environment.tests['function'] = is_function
+        tmpl = build_jinja2_template(self.def_template)
         return tmpl.render(fields)
 
     def member(self, member, scope='private'):
@@ -337,9 +341,7 @@ class ArrayOnStack(Array):
             'name': self.name,
             'items': self.items,
             'size': the_size}
-        tmpl = Template(self.def_template)
-        tmpl.environment.tests['variable'] = is_variable
-        tmpl.environment.tests['function'] = is_function
+        tmpl = build_jinja2_template(self.def_template)
         return tmpl.render(fields)
 
 
@@ -369,9 +371,7 @@ class ArrayOnHeap(Array):
             'name': self.name,
             'items': self.items,
             'size': the_size}
-        tmpl = Template(self.def_template)
-        tmpl.environment.tests['variable'] = is_variable
-        tmpl.environment.tests['function'] = is_function
+        tmpl = build_jinja2_template(self.def_template)
         return tmpl.render(fields)
 
 
@@ -471,11 +471,7 @@ class Source:
             'includes_local': self.includes_local,
             'includes': self.includes,
             'cpp_items': self.cpp_items}
-        tmpl = Template(self.template)
-        tmpl.environment.tests['variable'] = is_variable
-        tmpl.environment.tests['function'] = is_function
-        tmpl.environment.tests['class'] = is_class
-        tmpl.environment.tests['header'] = is_header
+        tmpl = build_jinja2_template(self.template)
         return tmpl.render(fields)
 
     def include(self, header):
