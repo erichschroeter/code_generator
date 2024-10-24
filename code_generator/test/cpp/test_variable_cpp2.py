@@ -39,6 +39,12 @@ class TestVariable(unittest.TestCase):
     def test_name_underscore0(self):
         self.assertTrue(Variable('_0'))
 
+    def test_name_namespace(self):
+        self.assertTrue(Variable('company::Type'))
+
+    def test_type_namespace(self):
+        self.assertTrue(Variable('name', type='std::string'))
+
     def test_decl_with_default_type(self):
         self.assertEqual(Variable('x').decl_str(), 'void x')
 

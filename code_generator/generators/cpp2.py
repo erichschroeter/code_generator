@@ -8,9 +8,9 @@ from typing import Callable
 from jinja2 import Template
 
 
-CPP_IDENTIFIER_REGEX = r'^[a-zA-Z_]+[a-zA-Z0-9_]*$'
+CPP_IDENTIFIER_REGEX = r'^[a-zA-Z_:]+[a-zA-Z0-9_:]*$'
 CPP_IDENTIFIER_PATTERN = re.compile(CPP_IDENTIFIER_REGEX)
-CPP_TYPE_REGEX = r'^([a-zA-Z_]+[a-zA-Z0-9_]*| |&|\*)*$'
+CPP_TYPE_REGEX = r'^([a-zA-Z_:]+[a-zA-Z0-9_:]*| |&|\*)*$'
 CPP_TYPE_PATTERN = re.compile(CPP_TYPE_REGEX)
 
 
