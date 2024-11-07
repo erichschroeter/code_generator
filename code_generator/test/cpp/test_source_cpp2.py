@@ -11,18 +11,18 @@ class TestSource(unittest.TestCase):
 
     def test_str_with_one_include_as_str(self):
         self.assertEqual(
-            "#include <iostream>", str(Source("x.cpp").include("iostream"))
+            "#include <iostream>\n", str(Source("x.cpp").include("iostream"))
         )
 
     def test_str_with_one_include_as_Header(self):
         self.assertEqual(
-            "#include <custom.h>", str(Source("x.cpp").include(Header("custom.h")))
+            "#include <custom.h>\n", str(Source("x.cpp").include(Header("custom.h")))
         )
 
     def test_str_with_two_include(self):
         self.assertEqual(
             dedent(
-                """
+                """\
                                 #include <cassert>
                                 #include <iostream>
                                 """
