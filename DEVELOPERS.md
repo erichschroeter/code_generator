@@ -10,16 +10,16 @@ title: C++ components
 ---
 flowchart LR
     Python --> Codefile
-    Codefile --> DeclarationFile
-    Codefile --> DefinitionFile
-    Variable --> DeclarationFile
-    Function --> DeclarationFile
-    Class --> DefinitionFile
-    Variable --> DefinitionFile
-    Function --> DefinitionFile
-    Class --> DeclarationFile
-    DefinitionFile --> .cpp
-    DeclarationFile --> .h
+    Codefile --> Header
+    Codefile --> Source
+    Variable --> Header
+    Function --> Header
+    Class --> Source
+    Variable --> Source
+    Function --> Source
+    Class --> Header
+    Source --> .cpp
+    Header --> .h
 ```
 
 ## Update pypi version
