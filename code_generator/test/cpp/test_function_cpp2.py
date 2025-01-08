@@ -4,6 +4,7 @@ import unittest
 from code_generator.generators.cpp2 import (
     CppIdentifierError,
     CppTypeError,
+    Constructor,
     Function,
     Variable,
 )
@@ -156,3 +157,32 @@ class TestFunction(unittest.TestCase):
             ),
             Function("x").namespace("MyClass").def_str(),
         )
+
+
+class TestConstructor(unittest.TestCase):
+
+    def test_decl_with_default_type(self):
+        self.assertEqual(Constructor("x").decl_str(), "x()")
+
+    def test_def_as_str(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                x()
+                                {
+                                return false;
+                                }"""
+            ),
+            Constructor("x").impl("return false;").def_str(),
+        )
+
+    # def test_def_with_namespace(self):
+    #     self.assertEqual(
+    #         dedent(
+    #             """\
+    #                             void MyClass::x()
+    #                             {
+    #                             }"""
+    #         ),
+    #         Function("x").namespace("MyClass").def_str(),
+    #     )

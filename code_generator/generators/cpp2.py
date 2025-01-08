@@ -89,13 +89,13 @@ class Variable:
         self.name = name
         self.type = type
         self.qualifiers = qualifiers
-        self.value = 0
+        self._value = 0
 
     def __str__(self) -> str:
         return self.name
 
-    def val(self, val):
-        self.value = val
+    def val(self, the_value):
+        self._value = the_value
         return self
 
     def decl_str(self):
@@ -108,8 +108,8 @@ class Variable:
         qualifiers = (
             " ".join(self.qualifiers) + " " if self.qualifiers is not None else ""
         )
-        value = str(self.value) if type(self.value) != str else f'"{self.value}"'
-        return f"{qualifiers}{self.type} {self.name} = {value}"
+        the_value = str(self._value) if type(self._value) != str else f'"{self._value}"'
+        return f"{qualifiers}{self.type} {self.name} = {the_value}"
 
 
 class Function:
@@ -137,7 +137,10 @@ class Function:
             if self.args is not None
             else ""
         )
-        return f"{qualifiers}{self.type} {self.name}({args})"
+        if not qualifiers and not self.type:
+            return f"{self.name}({args})"
+        else:
+            return f"{qualifiers}{self.type} {self.name}({args})"
 
     def call_str(self):
         args = (
@@ -184,7 +187,15 @@ class Function:
         the_impl = self.impl_str()
         the_impl = f"{the_impl}\n" if the_impl else the_impl
         the_namespace = f"{self._namespace}::" if self._namespace else ""
-        return f"{qualifiers}{self.type} {the_namespace}{self.name}({args})\n{{\n{the_impl}}}"
+        if not qualifiers and not self.type:
+            return f"{the_namespace}{self.name}({args})\n{{\n{the_impl}}}"
+        else:
+            return f"{qualifiers}{self.type} {the_namespace}{self.name}({args})\n{{\n{the_impl}}}"
+
+
+class Constructor(Function):
+    def __init__(self, name, type="", qualifiers=None) -> None:
+        super().__init__(name, type, qualifiers)
 
 
 class Class:
