@@ -302,20 +302,22 @@ class Class:
         # return code.getvalue()
         fields = {
             "name": self.name,
-            "public_members": [m.namespace(self.name) for m in self.members_public],
+            "public_members": self.members_public,
             "protected_members": self.members_protected,
             "private_members": self.members_private,
         }
         tmpl = build_jinja2_template(self.def_template)
         return tmpl.render(fields)
 
-    def member(self, member, scope="private"):
+    def member(self, the_member, scope="private"):
+        if hasattr(the_member, 'namespace'):
+            the_member.namespace(self.name)  # Override the namespace now that it's a member of this class.
         if "private" == scope.lower():
-            self.members_private.append(member)
+            self.members_private.append(the_member)
         elif "protected" == scope.lower():
-            self.members_protected.append(member)
+            self.members_protected.append(the_member)
         elif "public" == scope.lower():
-            self.members_public.append(member)
+            self.members_public.append(the_member)
         return self
 
 
@@ -556,8 +558,26 @@ class Source:
         {% endfor -%}{% endif %}
         {%- if cpp_items %}{% for cpp_item in cpp_items -%}
         {%- if cpp_item is class -%}
-        {%- for cls_func in cpp_item.members_private -%}
-        {{ cls_func.def_str() }}
+        {%- for cls_member in cpp_item.members_private -%}
+        {% if cls_member is variable -%}
+        {{ cls_member.def_str() }};
+        {% else -%}
+        {{ cls_member.def_str() }}
+        {% endif -%}
+        {% endfor -%}
+        {%- for cls_member in cpp_item.members_protected -%}
+        {% if cls_member is variable -%}
+        {{ cls_member.def_str() }};
+        {% else -%}
+        {{ cls_member.def_str() }}
+        {% endif -%}
+        {% endfor -%}
+        {%- for cls_member in cpp_item.members_public -%}
+        {% if cls_member is variable -%}
+        {{ cls_member.def_str() }};
+        {% else -%}
+        {{ cls_member.def_str() }}
+        {% endif -%}
         {% endfor -%}
         {% elif cpp_item is variable -%}
         {{ cpp_item.def_str() }};

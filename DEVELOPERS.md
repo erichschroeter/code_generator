@@ -37,6 +37,7 @@ flowchart LR
 ### Install package locally for developing
 
 ```bash
+pip uninstall -y erichschroeter.code_generator
 python3 -m build
 pip install dist/erichschroeter.code_generator-0.1.5-py3-none-any.whl
 ```
