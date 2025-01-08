@@ -543,7 +543,9 @@ class Source:
         {% endfor -%}{% endif %}
         {%- if cpp_items %}{% for cpp_item in cpp_items -%}
         {%- if cpp_item is class -%}
-        {{ cpp_item.decl_str() }};
+        {%- for cls_func in cpp_item.members_private -%}
+        {{ cls_func.def_str() }}
+        {% endfor -%}
         {% elif cpp_item is variable -%}
         {{ cpp_item.def_str() }};
         {% elif cpp_item is function -%}

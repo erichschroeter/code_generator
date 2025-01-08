@@ -97,12 +97,13 @@ class TestSource(unittest.TestCase):
         self.assertEqual(
             dedent(
                 """\
-                                class Person
+                                unsigned int Person::get_age()
                                 {
-                                };
+                                return 21;
+                                }
                                 """
             ),
-            str(Source("x.cpp").add(Class("Person"))),
+            str(Source("x.cpp").add(Class("Person").member(Function("get_age", "unsigned int").impl("return 21;").namespace("Person")))),
         )
 
     def test_str_with_add_two_item_as_str(self):
@@ -122,15 +123,13 @@ class TestSource(unittest.TestCase):
                 """\
                                 #include <iostream>
                                 #include "stdio.h"
-                                class Person
-                                {
-                                };
+                                int x = 0;
                                 """
             ),
             str(
                 Source("x.cpp")
                 .include("iostream")
                 .includelocal("stdio.h")
-                .add(Class("Person"))
+                .add(Variable("x", type="int"))
             ),
         )

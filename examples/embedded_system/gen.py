@@ -1,4 +1,4 @@
-from code_generator.generators.cpp2 import Class, Constructor, Function, Header, Source, Variable
+from code_generator.generators.cpp import Class, Constructor, Function, Header, Source, Variable
 from typing import List, Tuple
 from dataclasses import dataclass, field
 import argparse
