@@ -6,6 +6,7 @@ from code_generator.generators.cpp import (
     CppTypeError,
     Constructor,
     Function,
+    Namespace,
     Variable,
 )
 
@@ -147,7 +148,7 @@ class TestFunction(unittest.TestCase):
             Function("x").impl("return false;").def_str(),
         )
 
-    def test_def_with_namespace(self):
+    def test_def_with_namespace_as_str(self):
         self.assertEqual(
             dedent(
                 """\
@@ -156,6 +157,39 @@ class TestFunction(unittest.TestCase):
                                 }"""
             ),
             Function("x").namespace("MyClass").def_str(),
+        )
+
+    def test_def_with_namespace_as_Namespace(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace(Namespace("MyClass")).def_str(),
+        )
+
+    def test_def_with_namespace_with_one_parent(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyCompany::MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace(Namespace("MyClass", Namespace("MyCompany"))).def_str(),
+        )
+
+    def test_def_with_namespace_with_two_parent(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyLib::MyCompany::MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace(Namespace("MyClass", Namespace("MyCompany", Namespace("MyLib")))).def_str(),
         )
 
 

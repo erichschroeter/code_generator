@@ -80,6 +80,19 @@ def build_jinja2_template(template_str):
     return tmpl
 
 
+class Namespace:
+    def __init__(self, name, parent=None) -> None:
+        if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
+            raise CppIdentifierError(name)
+        self.parent = parent
+        self.name = name
+
+    def __str__(self) -> str:
+        if self.parent is None:
+            return self.name
+        return f"{self.parent.__str__()}::{self.name}"
+
+
 class Variable:
     def __init__(self, name, type="void", qualifiers=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
