@@ -1,5 +1,13 @@
 # Developers
 
+- [Developers](#developers)
+  - [Design](#design)
+    - [C++ Components](#c-components)
+  - [Developing](#developing)
+    - [Install package locally for developing](#install-package-locally-for-developing)
+    - [Update pypi version](#update-pypi-version)
+    - [Executing unit tests](#executing-unit-tests)
+
 ## Design
 
 ### C++ Components
@@ -22,14 +30,31 @@ flowchart LR
     Header --> .h
 ```
 
-## Update pypi version
+[top](#developers)
+
+## Developing
+
+### Install package locally for developing
+
+```bash
+python3 -m build
+pip install dist/erichschroeter.code_generator-0.1.5-py3-none-any.whl
+```
+
+[top](#developers)
+
+### Update pypi version
 
 ```bash
 python3 -m build
 python3 -m twine upload --repository testpypi dist/*
 ```
 
-## Executing unit tests
+[top](#developers)
+
+[Table]
+
+### Executing unit tests
 The following command will execute the unit tests.
 
 ```bash
@@ -44,3 +69,5 @@ python -m venv .venv
 pip install -r requirements-dev.txt
 python -m pytest
 ```
+
+[top](#developers)
