@@ -34,8 +34,7 @@ def generate_code(cfg: Config):
     hdr.add(cls)
     src.includelocal(hdr)
     src.add(cls)
-    print(str(hdr))
-    print(str(src))
+    return hdr, src
 
 
 def _parse_i18n(text_filepath: str) -> List[Tuple[str, str]]:
@@ -71,6 +70,7 @@ def main():
     parser.add_argument(
         '--target', help='Generate C++ code for the specified target')
     parser.add_argument('-o', '--output_dir', help='Directory to write files')
+    parser.add_argument('-d', '--dryrun', action='store_true', help="Dryrun, don't write files")
     parser.add_argument('config_file', help='JSON config file')
     args = parser.parse_args()
 
@@ -114,9 +114,26 @@ def main():
     log.addHandler(ch)
     # END configure logger
 
+    logging.debug(args)
     cfg = parse_config(args)
     logging.debug(cfg)
-    generate_code(cfg)
+    output_dir = args.output_dir if args.output_dir else os.getcwd()
+    os.makedirs(output_dir, exist_ok=True)
+    hdr, src = generate_code(cfg)
+    if args.dryrun:
+        print('================================================================================')
+        print('Config.h')
+        print('================================================================================')
+        print(str(hdr))
+        print('================================================================================')
+        print('Config.cpp')
+        print('================================================================================')
+        print(str(src))
+    else:
+        with open(os.path.join(os.getcwd(), hdr.filename), 'w+') as f:
+            f.write(str(hdr))
+        with open(os.path.join(os.getcwd(), src.filename), 'w+') as f:
+            f.write(str(src))
 
 
 if __name__ == "__main__":
