@@ -1,11 +1,11 @@
-from code_generator.generators.cpp import Class, ClassDeclaration, ClassDefinition, Const, Function, Namespace, Variable, VariableDeclaration, VariableDefinition
-from code_generator.code_generator import CppFile
+from code_generator.generators.cpp2 import Class, Constructor, Function, Header, Source, Variable
 from typing import List, Tuple
-import json
 from dataclasses import dataclass, field
 import argparse
-import sys
+import json
+import logging
 import os
+import sys
 
 # For this example, the Python path needs to be added so we can use code generator modules.
 GIT_TOP_DIR = os.path.dirname(os.path.dirname(
@@ -19,27 +19,26 @@ class Config:
 
 
 def generate_code(cfg: Config):
-    hdr = CppFile('Example_Text.h')
-    cpp = CppFile('Example_Text.cpp')
+    '''
+    Uses the Config to generate a simple code example.
+    '''
+    hdr = Header('Config.h')
+    src = Source('Config.cpp')
     vars = []
     for string_map in cfg.strings:
-        vars.append(Variable(
-            name=string_map[0], type='char *', qualifier=Const(), init_value=f'"{string_map[1]}"'))
-    namespace = Namespace(name='MyCompany')
-    cls = Class(name='Cfg', ref_to_parent=namespace)
-    cls.add(Function(name=cls.name))
+        vars.append(Variable(name=string_map[0], type='char *', qualifiers=['const']).val(string_map[1]))
+    cls = Class(name='Config')
+    cls.member(Constructor(name=cls.name), scope='public')
     for var in vars:
-        cls.add(var)
-        hdr(VariableDeclaration(var).code())
-        cpp(VariableDefinition(var).code())
-    hdr = CppFile('Example_Config.h')
-    cpp = CppFile('Example_Config.cpp')
-    hdr(ClassDeclaration(cls).code())
-    cpp('#include "Example_Config.h"')
-    cpp(ClassDefinition(cls).code())
+        cls.member(var, scope='public')
+    hdr.add(cls)
+    src.includelocal(hdr)
+    src.add(cls)
+    print(str(hdr))
+    print(str(src))
 
 
-def parse_i18n(text_filepath: str) -> List[Tuple[str, str]]:
+def _parse_i18n(text_filepath: str) -> List[Tuple[str, str]]:
     strings = []
     with open(text_filepath) as text_file:
         for line in text_file.readlines():
@@ -49,24 +48,74 @@ def parse_i18n(text_filepath: str) -> List[Tuple[str, str]]:
 
 
 def parse_config(args) -> Config:
+    '''
+    Parses the config file specified via the command line and returns a valid Config.
+    '''
     config = Config(strings=[])
     with open(args.config_file) as config_file:
         json_data = json.load(config_file)
-        # TODO This is where you would perform validation for your own config schema.
-        config.strings = parse_i18n(json_data['strings'][0])
+        i18n_relative_path = os.path.join(os.path.dirname(args.config_file), json_data['strings'][0])
+        config.strings = _parse_i18n(i18n_relative_path)
+        # BEGIN custom validation of config
+        # END custom validation of config
     return config
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', action='version', version='1.0.0')
+    parser.add_argument('--version', action='version', version='0.1.0')
+    parser.add_argument('-v', '--verbosity',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        default='info',
+                        help='Set the logging verbosity level.')
     parser.add_argument(
         '--target', help='Generate C++ code for the specified target')
-    parser.add_argument('-o', '--output-dir', help='Directory to write files')
+    parser.add_argument('-o', '--output_dir', help='Directory to write files')
     parser.add_argument('config_file', help='JSON config file')
     args = parser.parse_args()
+
+    # START configure logger
+    class ColorLogFormatter(logging.Formatter):
+        '''
+        Custom formatter that changes the color of logs based on the log level.
+        '''
+
+        grey = "\x1b[38;20m"
+        green = "\u001b[32m"
+        yellow = "\x1b[33;20m"
+        red = "\x1b[31;20m"
+        bold_red = "\x1b[31;1m"
+        blue = "\u001b[34m"
+        cyan = "\u001b[36m"
+        reset = "\x1b[0m"
+
+        timestamp = '%(asctime)s - '
+        loglevel = '%(levelname)s'
+        message = ' - %(message)s'
+
+        FORMATS = {
+            logging.DEBUG:    timestamp + blue + loglevel + reset + message,
+            logging.INFO:     timestamp + green + loglevel + reset + message,
+            logging.WARNING:  timestamp + yellow + loglevel + reset + message,
+            logging.ERROR:    timestamp + red + loglevel + reset + message,
+            logging.CRITICAL: timestamp + bold_red + loglevel + reset + message
+        }
+
+        def format(self, record):
+            log_fmt = self.FORMATS.get(record.levelno)
+            formatter = logging.Formatter(log_fmt)
+            return formatter.format(record)
+    loglevel = getattr(logging, args.verbosity.upper())
+    ch = logging.StreamHandler()
+    ch.setLevel(loglevel)
+    ch.setFormatter(ColorLogFormatter())
+    log = logging.getLogger()
+    log.setLevel(loglevel)
+    log.addHandler(ch)
+    # END configure logger
+
     cfg = parse_config(args)
-    print(cfg)
+    logging.debug(cfg)
     generate_code(cfg)
 
 
