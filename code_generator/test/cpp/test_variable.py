@@ -1,6 +1,6 @@
 import unittest
 
-from code_generator.generators.cpp2 import CppIdentifierError, CppTypeError, Variable
+from code_generator.generators.cpp import CppIdentifierError, CppTypeError, Variable
 
 
 class TestVariable(unittest.TestCase):

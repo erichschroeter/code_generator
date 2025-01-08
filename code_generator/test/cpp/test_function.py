@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp2 import (
+from code_generator.generators.cpp import (
     CppIdentifierError,
     CppTypeError,
     Constructor,

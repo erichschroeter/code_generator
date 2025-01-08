@@ -1,7 +1,7 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp2 import Class, Function, Header, Variable
+from code_generator.generators.cpp import Class, Function, Header, Variable
 
 
 class TestHeader(unittest.TestCase):
