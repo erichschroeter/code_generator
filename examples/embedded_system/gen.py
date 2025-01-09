@@ -26,7 +26,9 @@ def generate_code(cfg: Config):
     src = Source('Config.cpp')
     vars = []
     for string_map in cfg.strings:
-        vars.append(Variable(name=string_map[0], type='char *', qualifiers=['const']).val(string_map[1]))
+        vars.append(Variable(name=string_map[0], type='char *', qualifiers=['static', 'const'])
+                    .namespace('Config')
+                    .val(string_map[1]))
     cls = Class(name='Config')
     cls.member(Constructor(name=cls.name), scope='public')
     for var in vars:
