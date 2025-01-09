@@ -122,17 +122,17 @@ def main():
     hdr, src = generate_code(cfg)
     if args.dryrun:
         print('================================================================================')
-        print('Config.h')
+        print(f'{output_dir}/Config.h')
         print('================================================================================')
         print(str(hdr))
         print('================================================================================')
-        print('Config.cpp')
+        print(f'{output_dir}/Config.cpp')
         print('================================================================================')
         print(str(src))
     else:
-        with open(os.path.join(os.getcwd(), hdr.filename), 'w+') as f:
+        with open(os.path.join(output_dir, hdr.filename), 'w+') as f:
             f.write(str(hdr))
-        with open(os.path.join(os.getcwd(), src.filename), 'w+') as f:
+        with open(os.path.join(output_dir, src.filename), 'w+') as f:
             f.write(str(src))
 
 
