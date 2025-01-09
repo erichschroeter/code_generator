@@ -102,6 +102,7 @@ class Variable:
         self.name = name
         self.type = type
         self.qualifiers = qualifiers
+        self._namespace = None
         self._value = 0
 
     def __str__(self) -> str:
@@ -109,6 +110,10 @@ class Variable:
 
     def val(self, the_value):
         self._value = the_value
+        return self
+
+    def namespace(self, the_namespace):
+        self._namespace = the_namespace
         return self
 
     def decl_str(self):
@@ -122,7 +127,8 @@ class Variable:
             " ".join(self.qualifiers) + " " if self.qualifiers is not None else ""
         )
         the_value = str(self._value) if type(self._value) != str else f'"{self._value}"'
-        return f"{qualifiers}{self.type} {self.name} = {the_value}"
+        the_namespace = f"{self._namespace}::" if self._namespace else ""
+        return f"{qualifiers}{self.type} {the_namespace}{self.name} = {the_value}"
 
 
 class Function:

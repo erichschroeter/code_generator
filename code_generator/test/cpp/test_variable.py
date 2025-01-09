@@ -91,3 +91,6 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(
             Variable("x").val(Variable("myfunc")).def_str(), "void x = myfunc"
         )
+
+    def test_def_with_value_and_namespace_as_str(self):
+        self.assertEqual(Variable("x").val("hello").namespace('Example').def_str(), 'void Example::x = "hello"')
