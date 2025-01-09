@@ -264,6 +264,24 @@ class Class:
         )
         self.def_template = dedent(
             """\
+        {%- if private_members %}
+            {%- for member in private_members %}
+            {%- if member is variable or member is function -%}
+            {{member.def_str()}}
+            {%- else %}
+            {{member}}
+            {%- endif -%}
+            {%- endfor -%}
+        {% endif %}
+        {%- if protected_members %}
+            {%- for member in protected_members %}
+            {%- if member is variable or member is function -%}
+            {{member.def_str()}}
+            {%- else %}
+            {{member}}
+            {%- endif -%}
+            {%- endfor -%}
+        {% endif %}
         {%- if public_members %}
             {%- for member in public_members %}
             {%- if member is variable or member is function -%}

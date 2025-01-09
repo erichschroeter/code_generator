@@ -189,6 +189,28 @@ class TestClass(unittest.TestCase):
             Class("x").member(Function("foo"), scope="public").def_str(),
         )
 
+    def test_def_with_one_protected_member_as_Function(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void x::foo()
+                                {
+                                }"""
+            ),
+            Class("x").member(Function("foo"), scope="protected").def_str(),
+        )
+
+    def test_def_with_one_privated_member_as_Function(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void x::foo()
+                                {
+                                }"""
+            ),
+            Class("x").member(Function("foo"), scope="private").def_str(),
+        )
+
 
 class TestStruct(unittest.TestCase):
 
