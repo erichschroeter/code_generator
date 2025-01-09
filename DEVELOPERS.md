@@ -39,7 +39,7 @@ flowchart LR
 ```bash
 pip uninstall -y erichschroeter.code_generator
 python3 -m build
-pip install dist/erichschroeter.code_generator-0.1.5-py3-none-any.whl
+pip install dist/erichschroeter.code_generator-0.1.0-py3-none-any.whl
 ```
 
 [top](#developers)
