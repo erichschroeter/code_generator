@@ -1,4 +1,4 @@
-from code_generator.generators.cpp import Class, Constructor, Function, Header, Source, Variable
+from code_generator.generators.cpp import Class, Constructor, Function, Header, QualifierContext, Source, Variable
 from typing import List, Tuple
 from dataclasses import dataclass, field
 import argparse
@@ -26,7 +26,7 @@ def generate_code(cfg: Config):
     src = Source('Config.cpp')
     vars = []
     for string_map in cfg.strings:
-        vars.append(Variable(name=string_map[0], type='char *', qualifiers=['static', 'const'])
+        vars.append(Variable(name=string_map[0], type='char *', qualifier_ctx=QualifierContext(decl_pre=['static', 'const'], def_pre=['const']))
                     .namespace('Config')
                     .val(string_map[1]))
     cls = Class(name='Config')

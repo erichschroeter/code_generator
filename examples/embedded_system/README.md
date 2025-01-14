@@ -17,7 +17,7 @@ int main()
     return 0;
 }
 EOF
-g++ -o hello examples/embedded_system/main.cpp examples/embedded_system/generated/Config.cpp
+g++ -o hello -Iexamples/embedded_system/generated examples/embedded_system/main.cpp examples/embedded_system/generated/Config.cpp
 ```
 
 > [!TIP]

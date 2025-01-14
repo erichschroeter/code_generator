@@ -1,6 +1,6 @@
 import unittest
 
-from code_generator.generators.cpp import CppIdentifierError, CppTypeError, Variable
+from code_generator.generators.cpp import CppIdentifierError, CppTypeError, QualifierContext, Variable
 
 
 class TestVariable(unittest.TestCase):
@@ -66,12 +66,12 @@ class TestVariable(unittest.TestCase):
 
     def test_decl_with_custom_one_qualifier(self):
         self.assertEqual(
-            Variable("x", qualifiers=["extern"]).decl_str(), "extern void x"
+            Variable("x", qualifier_ctx=QualifierContext(decl_pre=["extern"])).decl_str(), "extern void x"
         )
 
     def test_decl_with_custom_two_qualifier(self):
         self.assertEqual(
-            Variable("x", qualifiers=["extern", "const"]).decl_str(),
+            Variable("x", qualifier_ctx=QualifierContext(decl_pre=["extern", "const"])).decl_str(),
             "extern const void x",
         )
 

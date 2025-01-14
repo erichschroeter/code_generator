@@ -93,15 +93,41 @@ class Namespace:
         return f"{self.parent.__str__()}::{self.name}"
 
 
+class QualifierContext:
+    def __init__(self, def_pre=None, def_post=None, decl_pre=None, decl_post=None) -> None:
+        self.def_pre = def_pre
+        self.def_post = def_post
+        self.decl_pre = decl_pre
+        self.decl_post = decl_post
+
+    def decl_str(self, obj):
+        pre = (
+            " ".join(self.decl_pre) + " " if self.decl_pre is not None else ""
+        )
+        post = (
+            " ".join(self.decl_post) + " " if self.decl_post is not None else ""
+        )
+        return f"{pre}{obj}{post}"
+
+    def def_str(self, obj):
+        pre = (
+            " ".join(self.def_pre) + " " if self.def_pre is not None else ""
+        )
+        post = (
+            " ".join(self.def_post) + " " if self.def_post is not None else ""
+        )
+        return f"{pre}{obj}{post}"
+
+
 class Variable:
-    def __init__(self, name, type="void", qualifiers=None) -> None:
+    def __init__(self, name, type="void", qualifier_ctx=None) -> None:
         if not CPP_IDENTIFIER_PATTERN.fullmatch(name):
             raise CppIdentifierError(name)
         if not CPP_TYPE_PATTERN.fullmatch(type):
             raise CppTypeError(type)
         self.name = name
         self.type = type
-        self.qualifiers = qualifiers
+        self.qualifier_ctx = qualifier_ctx
         self._namespace = None
         self._value = 0
 
@@ -117,18 +143,16 @@ class Variable:
         return self
 
     def decl_str(self):
-        qualifiers = (
-            " ".join(self.qualifiers) + " " if self.qualifiers is not None else ""
-        )
-        return f"{qualifiers}{self.type} {self.name}"
+        if self.qualifier_ctx:
+            return self.qualifier_ctx.decl_str(f"{self.type} {self.name}")
+        return f"{self.type} {self.name}"
 
     def def_str(self):
-        qualifiers = (
-            " ".join(self.qualifiers) + " " if self.qualifiers is not None else ""
-        )
         the_value = str(self._value) if type(self._value) != str else f'"{self._value}"'
         the_namespace = f"{self._namespace}::" if self._namespace else ""
-        return f"{qualifiers}{self.type} {the_namespace}{self.name} = {the_value}"
+        if self.qualifier_ctx:
+            return self.qualifier_ctx.def_str(f"{self.type} {the_namespace}{self.name} = {the_value}")
+        return f"{self.type} {the_namespace}{self.name} = {the_value}"
 
 
 class Function:
