@@ -2,9 +2,12 @@
 
 This example shows what might be possible if generating C++ code for an embedded system that has a JSON configuration file.
 
+> [!NOTE]
+> The bash code below is written with the intent to be executed from the top level git directory.
+
 ```bash
-python examples/embedded_system/gen.py -v debug -o generated examples/embedded_system/config.json
-cat << EOF > main.cpp
+python examples/embedded_system/gen.py -v debug -o examples/embedded_system/generated examples/embedded_system/config.json
+cat << EOF > examples/embedded_system/main.cpp
 #include <iostream>
 #include "Config.h"
 
@@ -14,7 +17,7 @@ int main()
     return 0;
 }
 EOF
-g++ -o hello main.cpp Config.cpp
+g++ -o hello examples/embedded_system/main.cpp examples/embedded_system/generated/Config.cpp
 ```
 
 > [!TIP]
