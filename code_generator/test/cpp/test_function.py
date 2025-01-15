@@ -1,164 +1,222 @@
-import io
 from textwrap import dedent
 import unittest
-from code_generator.code_generator import CppFile
-from code_generator.cpp_generator import CppFunction
-from code_generator.generators.cpp import AllmanStyle, Class, Const, Function, FunctionDeclaration, FunctionDefinition, KnRStyle, Pure, Virtual
 
-
-def handle_to_factorial(self, cpp):
-    cpp('return n < 1 ? 1 : (n * factorial(n - 1));')
-
-
-class TestCppFunctionGenerator(unittest.TestCase):
-
-    def handle_to_factorial(self, cpp):
-        cpp('return n < 1 ? 1 : (n * factorial(n - 1));')
-
-    def test_is_constexpr_raises_error_when_implementation_value_is_none(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        func = CppFunction(name="factorial", ret_type="int", is_constexpr=True)
-        self.assertRaises(RuntimeError, func.render_to_string, cpp)
-
-    def test_is_constexpr_render_to_string(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        func = CppFunction(name="factorial", ret_type="int",
-                           implementation_handle=TestCppFunctionGenerator.handle_to_factorial, is_constexpr=True)
-        func.add_argument('int n')
-        func.render_to_string(cpp)
-        self.assertIn(dedent('''\
-            constexpr int factorial(int n)
-            {
-            \treturn n < 1 ? 1 : (n * factorial(n - 1));
-            }'''), writer.getvalue())
-
-    def test_is_constexpr_render_to_string_declaration(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        func = CppFunction(name="factorial", ret_type="int",
-                           implementation_handle=TestCppFunctionGenerator.handle_to_factorial, is_constexpr=True)
-        func.add_argument('int n')
-        func.render_to_string_declaration(cpp)
-        self.assertIn(dedent('''\
-            constexpr int factorial(int n)
-            {
-            \treturn n < 1 ? 1 : (n * factorial(n - 1));
-            }'''), writer.getvalue())
-
-    def test_README_example(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        factorial_function = CppFunction(name='factorial', ret_type='int', is_constexpr=True,
-                                         implementation_handle=handle_to_factorial, documentation='/// Calculates and returns the factorial of \\p n.')
-        factorial_function.add_argument('int n')
-        factorial_function.render_to_string(cpp)
-        self.assertIn(dedent('''\
-            /// Calculates and returns the factorial of \\p n.
-            constexpr int factorial(int n)
-            {
-            \treturn n < 1 ? 1 : (n * factorial(n - 1));
-            }'''), writer.getvalue())
+from code_generator.generators.cpp import (
+    CppIdentifierError,
+    CppTypeError,
+    Constructor,
+    Function,
+    Namespace,
+    Variable,
+)
 
 
 class TestFunction(unittest.TestCase):
 
-    def test_raises_error_with_empty_name(self):
-        self.assertRaises(ValueError, Function)
+    def test_raises_CppIdentifierError_starts_with_digit(self):
+        self.assertRaises(CppIdentifierError, Function, "0")
 
-    def test_raises_error_args_not_correct_tuple(self):
-        self.assertRaises(ValueError, Function, name='x', args=[''])
+    def test_raises_CppTypeError_starts_with_digit(self):
+        self.assertRaises(CppTypeError, Function, "x", "0")
+
+    def test_name_x(self):
+        self.assertTrue(Function("x"))
+
+    def test_name_X(self):
+        self.assertTrue(Function("X"))
+
+    def test_name_aA(self):
+        self.assertTrue(Function("aA"))
+
+    def test_name_aAunderscore(self):
+        self.assertTrue(Function("aA_"))
+
+    def test_name_aAunderscore0(self):
+        self.assertTrue(Function("aA_0"))
+
+    def test_name_aA0underscore(self):
+        self.assertTrue(Function("aA0_"))
+
+    def test_name_Aa(self):
+        self.assertTrue(Function("Aa"))
+
+    def test_name_underscore(self):
+        self.assertTrue(Function("_"))
+
+    def test_name_underscore0(self):
+        self.assertTrue(Function("_0"))
+
+    def test_decl_with_default_type(self):
+        self.assertEqual(Function("x").decl_str(), "void x()")
+
+    def test_decl_with_type_with_whitespace(self):
+        self.assertEqual(Function("x", "unsigned int").decl_str(), "unsigned int x()")
+
+    def test_decl_with_type_with_pointer(self):
+        self.assertEqual(Function("x", "int *").decl_str(), "int * x()")
+
+    def test_decl_with_type_with_reference(self):
+        self.assertEqual(Function("x", "int &").decl_str(), "int & x()")
+
+    def test_decl_with_custom_type(self):
+        self.assertEqual(Function("x", type="bool").decl_str(), "bool x()")
+
+    def test_decl_raises_CppTypeError_with_type_with_whitespace_and_invalid_identifier(
+        self,
+    ):
+        self.assertRaises(CppTypeError, Function, "x", type="int % whitespace")
+
+    def test_decl_with_custom_one_qualifier(self):
+        self.assertEqual(
+            Function("x", qualifiers=["virtual"]).decl_str(), "virtual void x()"
+        )
+
+    def test_decl_with_custom_two_qualifier(self):
+        self.assertEqual(
+            Function("x", qualifiers=["static", "const"]).decl_str(),
+            "static const void x()",
+        )
+
+    def test_str(self):
+        self.assertEqual(str(Function("x")), "x")
+
+    def test_decl_with_one_arg_as_str(self):
+        self.assertEqual(Function("x").arg("int").decl_str(), "void x(int)")
+
+    def test_decl_with_two_arg_as_str(self):
+        self.assertEqual(
+            Function("x").arg("int").arg("bool enable").decl_str(),
+            "void x(int, bool enable)",
+        )
+
+    def test_decl_with_one_arg_as_Variable(self):
+        self.assertEqual(Function("x").arg(Variable("x")).decl_str(), "void x(void x)")
+
+    def test_decl_with_two_arg_as_Variable(self):
+        self.assertEqual(
+            Function("x").arg(Variable("x")).arg(Variable("y", type="int")).decl_str(),
+            "void x(void x, int y)",
+        )
+
+    def test_call_with_one_arg_as_str(self):
+        self.assertEqual("y", Function("x").arg("y").call_str())
+
+    def test_call_with_two_arg_as_str(self):
+        self.assertEqual("y, z", Function("x").arg("y").arg("z").call_str())
+
+    def test_call_with_one_arg_as_Variable(self):
+        self.assertEqual("y", Function("x").arg(Variable("y")).call_str())
+
+    def test_call_with_two_arg_as_Variable(self):
+        self.assertEqual(
+            "y, z", Function("x").arg(Variable("y")).arg(Variable("z")).call_str()
+        )
+
+    def test_call_with_one_arg_as_int(self):
+        self.assertEqual("1", Function("x").arg(1).call_str())
+
+    def test_impl_as_str(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                return false;"""
+            ),
+            Function("x").impl("return false;").impl_str(),
+        )
+
+    def test_impl_as_callable(self):
+        def increment_impl() -> str:
+            return "count++;"
+
+        self.assertEqual(
+            dedent(
+                """\
+                                count++;"""
+            ),
+            Function("x").impl(increment_impl).impl_str(),
+        )
+
+    def test_def_as_str(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void x()
+                                {
+                                return false;
+                                }"""
+            ),
+            Function("x").impl("return false;").def_str(),
+        )
+
+    def test_def_with_namespace_as_str(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace("MyClass").def_str(),
+        )
+
+    def test_def_with_namespace_as_Namespace(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace(Namespace("MyClass")).def_str(),
+        )
+
+    def test_def_with_namespace_with_one_parent(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyCompany::MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace(Namespace("MyClass", Namespace("MyCompany"))).def_str(),
+        )
+
+    def test_def_with_namespace_with_two_parent(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                void MyLib::MyCompany::MyClass::x()
+                                {
+                                }"""
+            ),
+            Function("x").namespace(Namespace("MyClass", Namespace("MyCompany", Namespace("MyLib")))).def_str(),
+        )
 
 
-class TestFunctionDeclaration(unittest.TestCase):
+class TestConstructor(unittest.TestCase):
 
-    def test_default_return_type_void(self):
-        self.assertEqual('void a();', FunctionDeclaration(
-            Function(name='a')).code())
+    def test_decl_with_default_type(self):
+        self.assertEqual(Constructor("x").decl_str(), "x()")
 
-    def test_pure_virtual(self):
-        self.assertEqual('virtual void a() = 0;', FunctionDeclaration(
-            Function(name='a', qualifier=Virtual(), postfix_qualifier=Pure())).code())
+    def test_def_as_str(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                x()
+                                {
+                                return false;
+                                }"""
+            ),
+            Constructor("x").impl("return false;").def_str(),
+        )
 
-    def test_with_one_arg(self):
-        self.assertEqual('void a(int x);', FunctionDeclaration(
-            Function(name='a').with_arg('int x')).code())
-
-    def test_with_one_arg_default(self):
-        self.assertEqual('void a(int * x = nullptr);', FunctionDeclaration(
-            Function(name='a').with_arg('int * x', 'nullptr')).code())
-
-    def test_with_two_args(self):
-        self.assertEqual('void a(int x, float y);', FunctionDeclaration(
-            Function(name='a').with_arg('int x').with_arg('float y')).code())
-
-
-class TestAllmanStyle(unittest.TestCase):
-
-    def test_open_brace_on_line_after_function(self):
-        def example_main() -> str:
-            return 'return 0;'
-        actual = io.StringIO()
-        with AllmanStyle(writer=actual) as code:
-            code.write(example_main())
-        self.assertEqual(actual.getvalue(), dedent("""
-            {
-            return 0;
-            }"""))
-
-
-class TestKnRStyle(unittest.TestCase):
-
-    def test_open_brace_on_same_line_as_function(self):
-        def example_main() -> str:
-            return 'return 0;'
-        actual = io.StringIO()
-        with KnRStyle(writer=actual) as code:
-            code.write(example_main())
-        self.assertEqual(actual.getvalue(), dedent("""\
-             {
-            return 0;
-            }"""))
-
-
-class TestFunctionDefinition(unittest.TestCase):
-
-    def test_default_return_type_void(self):
-        self.assertEqual('void a() {\n}', FunctionDefinition(
-            Function(name='a'), brace_strategy=KnRStyle).code())
-
-    def test_scope(self):
-        self.assertEqual('void MyClass::a() {\n}', FunctionDefinition(
-            Function(name='a', ref_to_parent=Class(name='MyClass')), brace_strategy=KnRStyle).code())
-
-    def test_default_with_one_arg(self):
-        self.assertEqual('void a(int x) {\n}', FunctionDefinition(
-            Function(name='a').with_arg('int x'), brace_strategy=KnRStyle).code())
-
-    def test_default_with_two_arg(self):
-        self.assertEqual('void a(int x, float y) {\n}', FunctionDefinition(Function(
-            name='a').with_arg('int x').with_arg('float y'), brace_strategy=KnRStyle).code())
-
-    def test_default_with_implementation_handle(self):
-        def do_something() -> str:
-            return dedent("""\
-            for ( auto const var : var_list )
-            {
-            \tvar->update();
-            }""")
-        self.assertEqual(dedent("""\
-            void a() {
-            \tfor ( auto const var : var_list )
-            \t{
-            \t\tvar->update();
-            \t}
-            }"""), FunctionDefinition(Function(name='a', implementation_handle=do_something), brace_strategy=KnRStyle).code())
-
-    def test_const_function(self):
-        def example_accessor() -> str:
-            return 'return m_count;'
-        self.assertEqual(dedent("""\
-            int get_count() const {
-            \treturn m_count;
-            }"""), FunctionDefinition(Function(name='get_count', return_type='int', postfix_qualifier=Const(), implementation_handle=example_accessor), brace_strategy=KnRStyle).code())
+    def test_def_with_namespace(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                MyClass::x()
+                                {
+                                }"""
+            ),
+            Constructor("x").namespace("MyClass").def_str(),
+        )

@@ -1,5 +1,5 @@
 {
     "strings": [
-        "i18n/english.properties"
+        "./i18n/english.properties"
     ]
 }

@@ -1,74 +1,115 @@
 from textwrap import dedent
 import unittest
 
-from code_generator.generators.cpp import Enum, EnumDeclaration, KnRStyle
+from code_generator.generators.cpp import CppIdentifierError, Enum
 
 
 class TestEnum(unittest.TestCase):
 
-    def test_raises_error_with_empty_name(self):
-        self.assertRaises(ValueError, Enum)
+    def test_raises_CppIdentifierError_starts_with_digit(self):
+        self.assertRaises(CppIdentifierError, Enum, "0")
 
+    def test_name_x(self):
+        self.assertTrue(Enum("x"))
 
-class TestEnumDeclaration(unittest.TestCase):
+    def test_name_X(self):
+        self.assertTrue(Enum("X"))
 
-    def test_name_only(self):
-        self.assertEqual(dedent("""\
-            enum A {
-            };"""), EnumDeclaration(
-            Enum(name='A'), brace_strategy=KnRStyle).code())
+    def test_name_aA(self):
+        self.assertTrue(Enum("aA"))
 
-    def test_one_element_with_prefix(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \tCOLOR_RED
-            };"""), EnumDeclaration(
-            Enum(name='Color', prefix='COLOR_').add('RED'), brace_strategy=KnRStyle).code())
+    def test_name_aAunderscore(self):
+        self.assertTrue(Enum("aA_"))
 
-    def test_one_element(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \tRED
-            };"""), EnumDeclaration(
-            Enum(name='Color').add('RED'), brace_strategy=KnRStyle).code())
+    def test_name_aAunderscore0(self):
+        self.assertTrue(Enum("aA_0"))
 
-    def test_two_elements(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \tRED,
-            \tBLUE
-            };"""), EnumDeclaration(
-            Enum(name='Color').add('RED').add('BLUE'), brace_strategy=KnRStyle).code())
+    def test_name_aA0underscore(self):
+        self.assertTrue(Enum("aA0_"))
 
-    def test_one_element_with_value(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \tRED = 0
-            };"""), EnumDeclaration(
-            Enum(name='Color').add('RED', 0), brace_strategy=KnRStyle).code())
+    def test_name_Aa(self):
+        self.assertTrue(Enum("Aa"))
 
-    def test_two_elements_with_value(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \tRED = 0,
-            \tBLUE = 1
-            };"""), EnumDeclaration(
-            Enum(name='Color').add('RED', 0).add('BLUE', 1), brace_strategy=KnRStyle).code())
+    def test_name_underscore(self):
+        self.assertTrue(Enum("_"))
 
-    def test_one_element_with_docs(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \t/// The color red.
-            \tRED = 0
-            };"""), EnumDeclaration(
-            Enum(name='Color').add('RED', 0, docs='/// The color red.'), brace_strategy=KnRStyle).code_with_docs())
+    def test_name_underscore0(self):
+        self.assertTrue(Enum("_0"))
 
-    def test_two_element_with_docs(self):
-        self.assertEqual(dedent("""\
-            enum Color {
-            \t/// The color red.
-            \tRED,
-            \t/// The color blue.
-            \tBLUE
-            };"""), EnumDeclaration(
-            Enum(name='Color').add('RED', docs='/// The color red.').add('BLUE', docs='/// The color blue.'), brace_strategy=KnRStyle).code_with_docs())
+    def test_str(self):
+        self.assertEqual("x", str(Enum("x")))
+
+    def test_def_str_with_one_item_without_prefix(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                enum Colors
+                                {
+                                    RED
+                                }"""
+            ),
+            Enum("Colors").add("RED").def_str(),
+        )
+
+    def test_def_str_with_one_item_with_prefix(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                enum Colors
+                                {
+                                    COLOR_RED
+                                }"""
+            ),
+            Enum("Colors", prefix="COLOR_").add("RED").def_str(),
+        )
+
+    def test_def_str_with_one_item_with_value(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                enum Colors
+                                {
+                                    RED = 1
+                                }"""
+            ),
+            Enum("Colors").add("RED", 1).def_str(),
+        )
+
+    def test_def_str_with_two_item_without_prefix(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                enum Colors
+                                {
+                                    RED,
+                                    BLUE
+                                }"""
+            ),
+            Enum("Colors").add("RED").add("BLUE").def_str(),
+        )
+
+    def test_def_str_with_two_item_with_prefix(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                enum Colors
+                                {
+                                    COLOR_RED,
+                                    COLOR_BLUE
+                                }"""
+            ),
+            Enum("Colors", prefix="COLOR_").add("RED").add("BLUE").def_str(),
+        )
+
+    def test_def_str_with_two_item_with_value(self):
+        self.assertEqual(
+            dedent(
+                """\
+                                enum Colors
+                                {
+                                    RED = 1,
+                                    BLUE = 2
+                                }"""
+            ),
+            Enum("Colors").add("RED", 1).add("BLUE", 2).def_str(),
+        )

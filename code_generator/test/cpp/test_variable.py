@@ -1,136 +1,96 @@
-import io
-from textwrap import dedent
 import unittest
-from code_generator.code_generator import CppFile
-from code_generator.cpp_generator import CppVariable
-from code_generator.generators.cpp import Extern, Namespace, VariableConstructorDefinition, VariableDefinition, Const, Constexpr, Variable, VariableDeclaration
 
-
-class TestCppVariableGenerator(unittest.TestCase):
-
-    def test_cpp_var_via_writer(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        variables = CppVariable(name="var1",
-                                type="char*",
-                                is_class_member=False,
-                                is_static=False,
-                                is_const=True,
-                                initialization_value='0')
-        variables.render_to_string(cpp)
-        self.assertEqual('const char* var1 = 0;\n', writer.getvalue())
-
-    def test_is_constexpr_raises_error_when_is_const_true(self):
-        self.assertRaises(RuntimeError, CppVariable, name="COUNT", type="int",
-                          is_class_member=True, is_const=True, is_constexpr=True, initialization_value='0')
-
-    def test_is_constexpr_raises_error_when_initialization_value_is_none(self):
-        self.assertRaises(RuntimeError, CppVariable, name="COUNT",
-                          type="int", is_class_member=True, is_constexpr=True)
-
-    def test_is_constexpr_render_to_string(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        variables = CppVariable(name="COUNT",
-                                type="int",
-                                is_class_member=False,
-                                is_constexpr=True,
-                                initialization_value='0')
-        variables.render_to_string(cpp)
-        self.assertIn('constexpr int COUNT = 0;', writer.getvalue())
-
-    def test_is_constexpr_render_to_string_declaration(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        variables = CppVariable(name="COUNT",
-                                type="int",
-                                is_class_member=True,
-                                is_constexpr=True,
-                                initialization_value='0')
-        variables.render_to_string_declaration(cpp)
-        self.assertIn('constexpr int COUNT = 0;', writer.getvalue())
-
-    def test_is_extern_raises_error_when_is_static_is_true(self):
-        self.assertRaises(RuntimeError, CppVariable, name="var1",
-                          type="char*", is_static=True, is_extern=True)
-
-    def test_is_extern_render_to_string(self):
-        writer = io.StringIO()
-        cpp = CppFile(None, writer=writer)
-        v = CppVariable(name="var1", type="char*", is_extern=True)
-        v.render_to_string(cpp)
-        self.assertIn('extern char* var1;', writer.getvalue())
+from code_generator.generators.cpp import CppIdentifierError, CppTypeError, QualifierContext, Variable
 
 
 class TestVariable(unittest.TestCase):
 
-    def test_raises_error_with_empty_name(self):
-        self.assertRaises(ValueError, Variable)
+    def test_raises_CppIdentifierError_starts_with_digit(self):
+        self.assertRaises(CppIdentifierError, Variable, "0")
 
-    def test_raises_error_with_empty_type(self):
-        self.assertRaises(ValueError, Variable, name='a')
+    def test_raises_CppTypeError_starts_with_digit(self):
+        self.assertRaises(CppTypeError, Variable, "x", "0")
 
+    def test_name_x(self):
+        self.assertTrue(Variable("x"))
 
-class TestVariableDeclaration(unittest.TestCase):
+    def test_name_X(self):
+        self.assertTrue(Variable("X"))
 
-    def test_name_and_type_only(self):
-        self.assertEqual('int a;', VariableDeclaration(
-            Variable(name='a', type='int')).code())
+    def test_name_aA(self):
+        self.assertTrue(Variable("aA"))
 
-    def test_qualifier_const(self):
-        self.assertEqual('const int a;', VariableDeclaration(
-            Variable(name='a', type='int', qualifier=Const())).code())
+    def test_name_aAunderscore(self):
+        self.assertTrue(Variable("aA_"))
 
-    def test_qualifier_constexpr(self):
-        self.assertEqual('constexpr int a = 0;', VariableDeclaration(
-            Variable(name='a', type='int', init_value='0', qualifier=Constexpr())).code())
+    def test_name_aAunderscore0(self):
+        self.assertTrue(Variable("aA_0"))
 
-    def test_qualifier_constexpr_raises_error_when_no_init_value(self):
-        self.assertRaises(ValueError, VariableDeclaration(
-            Variable(name='a', type='int', qualifier=Constexpr())).code)
+    def test_name_aA0underscore(self):
+        self.assertTrue(Variable("aA0_"))
 
-    def test_qualifier_non_const(self):
-        self.assertEqual('extern int a;', VariableDeclaration(
-            Variable(name='a', type='int', qualifier=Extern())).code())
+    def test_name_Aa(self):
+        self.assertTrue(Variable("Aa"))
 
-    def test_init_value(self):
-        self.assertEqual('int a;', VariableDeclaration(
-            Variable(name='a', type='int', init_value='0')).code())
+    def test_name_underscore(self):
+        self.assertTrue(Variable("_"))
 
+    def test_name_underscore0(self):
+        self.assertTrue(Variable("_0"))
 
-class TestVariableDefinition(unittest.TestCase):
+    def test_name_namespace(self):
+        self.assertTrue(Variable("company::Type"))
 
-    def test_name_and_type_only(self):
-        self.assertEqual('int a = 0;', VariableDefinition(
-            Variable(name='a', type='int')).code())
+    def test_type_namespace(self):
+        self.assertTrue(Variable("name", type="std::string"))
 
-    def test_qualifiers(self):
-        self.assertEqual('const int a = 0;', VariableDefinition(
-            Variable(name='a', type='int', qualifier=Const())).code())
+    def test_decl_with_default_type(self):
+        self.assertEqual(Variable("x").decl_str(), "void x")
 
-    def test_init_value(self):
-        self.assertEqual('int a = MY_CONSTANT;', VariableDefinition(
-            Variable(name='a', type='int', init_value='MY_CONSTANT')).code())
+    def test_decl_with_type_with_whitespace(self):
+        self.assertEqual(Variable("x", "unsigned int").decl_str(), "unsigned int x")
 
-    def test_ref_to_parent(self):
-        self.assertEqual('int MyClass::a = 0;', VariableDefinition(
-            Variable(name='a', type='int', ref_to_parent=Namespace(name='MyClass'))).code())
+    def test_decl_with_type_with_pointer(self):
+        self.assertEqual(Variable("x", "int *").decl_str(), "int * x")
 
+    def test_decl_with_type_with_reference(self):
+        self.assertEqual(Variable("x", "int &").decl_str(), "int & x")
 
-class TestVariableConstructorDefinition(unittest.TestCase):
+    def test_decl_with_custom_type(self):
+        self.assertEqual(Variable("x", type="bool").decl_str(), "bool x")
 
-    def test_name_and_type_only(self):
-        self.assertEqual('a()', VariableConstructorDefinition(
-            Variable(name='a', type='int')).code())
+    def test_decl_raises_CppTypeError_with_type_with_whitespace_and_invalid_identifier(
+        self,
+    ):
+        self.assertRaises(CppTypeError, Variable, "x", type="int ^ whitespace")
 
-    def test_qualifiers(self):
-        self.assertEqual('a()', VariableConstructorDefinition(
-            Variable(name='a', type='int', qualifier=Const())).code())
+    def test_decl_with_custom_one_qualifier(self):
+        self.assertEqual(
+            Variable("x", qualifier_ctx=QualifierContext(decl_pre=["extern"])).decl_str(), "extern void x"
+        )
 
-    def test_init_value_and_const_qualifer(self):
-        self.assertEqual('a(0)', VariableConstructorDefinition(
-            Variable(name='a', type='int', qualifier=Const(), init_value='0')).code())
+    def test_decl_with_custom_two_qualifier(self):
+        self.assertEqual(
+            Variable("x", qualifier_ctx=QualifierContext(decl_pre=["extern", "const"])).decl_str(),
+            "extern const void x",
+        )
 
-    def test_init_value_and_constexpr_qualifer(self):
-        self.assertEqual('a(0)', VariableConstructorDefinition(
-            Variable(name='a', type='int', qualifier=Constexpr(), init_value='0')).code())
+    def test_str(self):
+        self.assertEqual(str(Variable("x")), "x")
+
+    def test_def_with_default(self):
+        self.assertEqual(Variable("x").def_str(), "void x = 0")
+
+    def test_def_with_value_as_int(self):
+        self.assertEqual(Variable("x").val(1).def_str(), "void x = 1")
+
+    def test_def_with_value_as_str(self):
+        self.assertEqual(Variable("x").val("hello").def_str(), 'void x = "hello"')
+
+    def test_def_with_value_as_Variable(self):
+        self.assertEqual(
+            Variable("x").val(Variable("myfunc")).def_str(), "void x = myfunc"
+        )
+
+    def test_def_with_value_and_namespace_as_str(self):
+        self.assertEqual(Variable("x").val("hello").namespace('Example').def_str(), 'void Example::x = "hello"')
