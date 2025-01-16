@@ -6,6 +6,7 @@ This example shows what might be possible if generating C++ code for an embedded
 > The bash code below is written with the intent to be executed from the top level git directory.
 
 ```bash
+pip install .
 python examples/embedded_system/gen.py -v debug -o examples/embedded_system/generated examples/embedded_system/config.json
 cat << EOF > examples/embedded_system/main.cpp
 #include <iostream>
