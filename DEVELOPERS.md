@@ -46,6 +46,12 @@ pip install dist/erichschroeter.code_generator-0.1.0-py3-none-any.whl
 
 ### Update pypi version
 
+> [!IMPORTANT]
+> Update dependencies, if changed. May require updating the following files:
+>  * `pyproject.toml`
+>  * `requirements.txt`
+>  * `requirements-dev.txt`
+
 ```bash
 python3 -m build
 python3 -m twine upload --repository testpypi dist/*
