@@ -4,7 +4,6 @@ import unittest
 from code_generator.generators.cpp import (
     Class,
     CppIdentifierError,
-    CppTypeError,
     Function,
     Struct,
     Variable,

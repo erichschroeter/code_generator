@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from io import StringIO
 import re
 from textwrap import dedent
 from typing import Callable
@@ -148,7 +147,7 @@ class Variable:
         return f"{self.type} {self.name}"
 
     def def_str(self):
-        the_value = str(self._value) if type(self._value) != str else f'"{self._value}"'
+        the_value = str(self._value) if not isinstance(self._value, str) else f'"{self._value}"'
         the_namespace = f"{self._namespace}::" if self._namespace else ""
         if self.qualifier_ctx:
             return self.qualifier_ctx.def_str(f"{self.type} {the_namespace}{self.name} = {the_value}")
@@ -176,7 +175,7 @@ class Function:
             " ".join(self.qualifiers) + " " if self.qualifiers is not None else ""
         )
         args = (
-            ", ".join([v.decl_str() if type(v) == Variable else v for v in self.args])
+            ", ".join([v.decl_str() if isinstance(v, Variable) else v for v in self.args])
             if self.args is not None
             else ""
         )
@@ -187,7 +186,7 @@ class Function:
 
     def call_str(self):
         args = (
-            ", ".join([str(v) if type(v) != str else v for v in self.args])
+            ", ".join([str(v) if not isinstance(v, str) else v for v in self.args])
             if self.args is not None
             else ""
         )
@@ -339,15 +338,6 @@ class Class:
         return tmpl.render(fields)
 
     def def_str(self):
-        # return self.decl_str()
-        # code = StringIO()
-        # for member in self.members_public:
-        #     code.write(member.def_str())
-        # for member in self.members_protected:
-        #     code.write(member.def_str())
-        # for member in self.members_private:
-        #     code.write(member.def_str())
-        # return code.getvalue()
         fields = {
             "name": self.name,
             "public_members": self.members_public,

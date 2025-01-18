@@ -1,16 +1,10 @@
-from code_generator.generators.cpp import Class, Constructor, Function, Header, QualifierContext, Source, Variable
+from code_generator.generators.cpp import Class, Constructor, Header, QualifierContext, Source, Variable
 from typing import List, Tuple
 from dataclasses import dataclass, field
 import argparse
 import json
 import logging
 import os
-import sys
-
-# For this example, the Python path needs to be added so we can use code generator modules.
-GIT_TOP_DIR = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, GIT_TOP_DIR)
 
 
 @dataclass
@@ -26,7 +20,9 @@ def generate_code(cfg: Config):
     src = Source('Config.cpp')
     vars = []
     for string_map in cfg.strings:
-        vars.append(Variable(name=string_map[0], type='char *', qualifier_ctx=QualifierContext(decl_pre=['static', 'const'], def_pre=['const']))
+        vars.append(Variable(name=string_map[0],
+                             type='char *',
+                             qualifier_ctx=QualifierContext(decl_pre=['static', 'const'], def_pre=['const']))
                     .namespace('Config')
                     .val(string_map[1]))
     cls = Class(name='Config')
